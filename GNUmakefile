@@ -5,8 +5,8 @@ SHELL = /bin/sh
 
 CC := gcc
 LD := gcc
-CFLAGS := -Wall -Wextra -Os -funroll-all-loops -g
-LDFLAGS := -flto -lncurses
+CFLAGS := -Wall -Wextra -Os -funroll-all-loops
+LDFLAGS := -lz
 STRIPARGS := -s -p
 
 SRCDIR = src
