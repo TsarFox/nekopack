@@ -26,7 +26,7 @@
 #include "cli.h"
 
 #define XP3_MAGIC "XP3\x0d\x0a\x20\x0a\x1a\x8b\x67\x01"
-#define XP3_VERSION_1_TABLE_OFFSET 11
+#define XP3_TABLE_OFFSET 11
 #define XP3_VERSION_OFFSET 19
 
 #define EXIT_SUCCESS 0
@@ -34,8 +34,8 @@
 
 int is_xp3_archive(FILE *archive);
 int get_archive_version(FILE *archive);
-uint8_t table_is_compressed(FILE *archive, uint8_t table_offset);
 uint64_t get_table_offset(FILE *archive, uint8_t archive_version);
+void *inflate_table(FILE *archive, uint64_t table_offset);
 
 
 int main(int argc, char *argv[]) {
@@ -47,6 +47,11 @@ int main(int argc, char *argv[]) {
         fclose(archive);
         exit(EXIT_FAILURE);
     }
+
+    int archive_version = get_archive_version(archive);
+    uint64_t table_offset = get_table_offset(archive, archive_version);
+    inflate_table(archive, table_offset);
+
     /* After the table_is_compressed byte is 8 bytes containing the
        compressed size followed by 8 bytes containing the original size
        (if the archive is compressed). Use zlib's inflate function to
@@ -66,13 +71,13 @@ int main(int argc, char *argv[]) {
 }
 
 
-/* Very simple check of the archive's magic number to decide
-   whether or not it really is a valid XP3 archive. */
+/* Simple check of the archive's magic number to decide
+   whether or not it represents a valid XP3 archive. */
 int is_xp3_archive(FILE *archive) {
-    char magic_buffer[12] = {0};
+    char* magic_buffer = malloc(11);
     rewind(archive);
-    fread(magic_buffer, sizeof(magic_buffer) - 1, 1, archive);
-    if (strcmp(magic_buffer, XP3_MAGIC))
+    fread(magic_buffer, 11, 1, archive);
+    if (memcmp(magic_buffer, XP3_MAGIC, 11))
         return 0;
     return 1;
 }
@@ -90,7 +95,7 @@ int get_archive_version(FILE *archive) {
 /* Subroutine for finding the archive's table offset. If the
    minor_version is invalid, the program will exit.  */
 uint64_t get_table_offset(FILE *archive, uint8_t archive_version) {
-    fseek(archive, XP3_VERSION_1_TABLE_OFFSET, SEEK_SET);
+    fseek(archive, XP3_TABLE_OFFSET, SEEK_SET);
     if (archive_version == 1) {
         uint64_t table_offset;
         fread(&table_offset, sizeof(uint64_t), 1, archive);
@@ -104,23 +109,25 @@ uint64_t get_table_offset(FILE *archive, uint8_t archive_version) {
         fprintf(stderr, "Version not implemented.\n");
         exit(EXIT_FAILURE);
     }
-    fseek(archive, additional_header_offset, SEEK_CUR);
+    fseek(archive, additional_header_offset, SEEK_SET);
     fseek(archive, sizeof(uint8_t) + sizeof(uint64_t), SEEK_CUR);
     fread(&table_offset, sizeof(uint64_t), 1, archive);
     return table_offset;
 }
 
 
-/* Function that returns the byte representing
-   whether or not the archive was compressed. */
-uint8_t table_is_compressed(FILE *archive, uint8_t table_offset) {
-    uint8_t is_compressed;
+/* Primary decompression subroutine. Decides whether or not the archive
+   has been compressed, and if it has been - inflates it. */
+void *inflate_table(FILE *archive, uint64_t table_offset) {
+    uint8_t compressed;
+    uint64_t compressed_size, decompressed_size;
     fseek(archive, table_offset, SEEK_SET);
-    fread(&is_compressed, sizeof(uint8_t), 1, archive);
-    return is_compressed;
-}
-
-
-void *inflate_table(FILE *archive, uint8_t table_offset) {
+    fread(&compressed, sizeof(uint8_t), 1, archive);
+    fread(&compressed_size, sizeof(uint64_t), 1, archive);
+    if (compressed) {
+        fread(&decompressed_size, sizeof(uint64_t), 1, archive);
+    } else {
+        decompressed_size = compressed_size;
+    }
     return 0x0;
 }
