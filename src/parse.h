@@ -15,13 +15,5 @@
    You should have received a copy of the GNU General Public License
    along with Nekopack. If not, see <http://www.gnu.org/licenses/>. */
 
-#pragma once
 
-/* Binary structure for storing command-line options. */
-struct configuration {
-    long long padding; // This is temporary.
-};
-
-/* General subroutine for parsing command-line arguments. Returns a
-   "configuration" structure containing everything parsed from argv. */
-struct configuration parse_args(int argc, char *argv[]);
+void extract(FILE *archive, uint64_t table_offset);

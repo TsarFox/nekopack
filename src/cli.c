@@ -54,7 +54,6 @@ struct configuration parse_args(int argc, char *argv[]) {
 
     while (current >= 0) {
         current = getopt_long(argc, argv, "hv", long_options, &option_index);
-
         switch (current) {
             case 'h':
                 printf("Usage: %s [OPTIONS] (ARCHIVE PATH)\n\n", argv[0]);
