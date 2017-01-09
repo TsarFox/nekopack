@@ -15,6 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with Nekopack. If not, see <http://www.gnu.org/licenses/>. */
 
+#pragma once
 
 #define EXIT_SUCCESS 0
 #define EXIT_FAILURE 1

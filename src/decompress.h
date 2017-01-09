@@ -15,5 +15,12 @@
    You should have received a copy of the GNU General Public License
    along with Nekopack. If not, see <http://www.gnu.org/licenses/>. */
 
+#pragma once
 
-void extract(FILE *archive, uint64_t table_offset);
+#include <zlib.h>
+
+#include "extract.h"
+
+/* Wrapper for inflate_chunk which operates on FILE pointers. The file
+   pointer's contents are inflated into a memory stream and returned. */
+memory_stream decompress_file(FILE *archive, uint64_t sizes_offset);

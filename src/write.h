@@ -15,13 +15,10 @@
    You should have received a copy of the GNU General Public License
    along with Nekopack. If not, see <http://www.gnu.org/licenses/>. */
 
-#pragma once
-
-/* Binary structure for storing command-line options. */
-struct configuration {
-    const char *archive_path; /* Path to archive to extract. */
-};
-
-/* General subroutine for parsing command-line arguments. Returns a
-   "configuration" structure containing everything parsed from argv. */
-struct configuration parse_args(int argc, char *argv[]);
+/* Because File entries won't necessarily follow the associated
+   eliF entry, filenames and hashes are stored in a linked list. */
+typedef struct node {
+    uint32_t key;
+    char *file_name;
+    struct node *next;
+} node;

@@ -17,11 +17,23 @@
 
 #pragma once
 
-/* Binary structure for storing command-line options. */
-struct configuration {
-    const char *archive_path; /* Path to archive to extract. */
-};
+#include <stdint.h>
 
-/* General subroutine for parsing command-line arguments. Returns a
-   "configuration" structure containing everything parsed from argv. */
-struct configuration parse_args(int argc, char *argv[]);
+#include <zlib.h>
+
+/* Structure representing a "stream" in memory. A pointer to the
+   start of the memory region is kept for freeing purposes. */
+typedef struct {
+    uint64_t stream_length;
+    Bytef *start;
+    Bytef *data;
+} memory_stream;
+
+/* Handles decompression of the archive, as well as
+   parsing, decrypting and writing the table entries. */
+void extract(FILE *archive, uint64_t table_offset);
+
+/* Wrapper for memcpy which increments the source operand by
+   the amount of bytes read to simulate a file stream. */
+void read_stream(void *destination, Bytef **source, size_t size);
+

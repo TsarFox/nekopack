@@ -15,6 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with Nekopack. If not, see <http://www.gnu.org/licenses/>. */
 
+#include <errno.h>
 #include <inttypes.h> // Needed for debugging at this point.
 #include <stdint.h>
 #include <stdio.h>
@@ -22,7 +23,7 @@
 #include <string.h>
 
 #include "cli.h"
-#include "parse.h"
+#include "extract.h"
 
 #define XP3_MAGIC "XP3\x0d\x0a\x20\x0a\x1a\x8b\x67\x01"
 #define XP3_TABLE_OFFSET 11
@@ -32,14 +33,16 @@ int is_xp3_archive(FILE *archive);
 int get_archive_version(FILE *archive);
 uint64_t get_table_offset(FILE *archive, uint8_t archive_version);
 
+/* Global instance of the command-line configuration structure. */
+struct configuration arguments;
+
 
 int main(int argc, char *argv[]) {
-    struct configuration arguments = parse_args(argc, argv);
+    arguments = parse_args(argc, argv);
 
-    FILE *archive = fopen(argv[1], "rb");
+    FILE *archive = fopen(arguments.archive_path, "rb");
     if (archive == NULL) {
-        // perror?
-        fprintf(stderr, "Cannot open file.\n");
+        perror(arguments.archive_path);
         exit(EXIT_FAILURE);
     } else if (!is_xp3_archive(archive)) {
         fprintf(stderr, "File is not an XP3 archive.\n");
@@ -50,21 +53,6 @@ int main(int argc, char *argv[]) {
     int archive_version = get_archive_version(archive);
     uint64_t table_offset = get_table_offset(archive, archive_version);
     extract(archive, table_offset);
-
-    /* After the table_is_compressed byte is 8 bytes containing the
-       compressed size followed by 8 bytes containing the original size
-       (if the archive is compressed). Use zlib's inflate function to
-       decompress the compressed size worth of chunks if it's compressed.
-
-       The decompressed data will contain a four-byte magic number, 
-       followed by 8 bytes containing the file size, followed by the
-       file size worth of data.
-
-       See the following link for magic numbers and entry handling
-       procedures.
-
-       https://github.com/vn-tools/arc_unpacker/blob/master/src/dec
-       /kirikiri/xp3_archive_decoder.cc */
     fclose(archive);
     return 0;
 }
@@ -74,8 +62,6 @@ int main(int argc, char *argv[]) {
    whether or not it represents a valid XP3 archive. */
 int is_xp3_archive(FILE *archive) {
     char* magic_buffer = malloc(11);
-    /* The magic number is at the very beginning of the file, so 
-       rewind must be called on the archive's file pointer. */
     rewind(archive);
     fread(magic_buffer, 11, 1, archive);
     if (memcmp(magic_buffer, XP3_MAGIC, 11)) {
@@ -100,12 +86,12 @@ int get_archive_version(FILE *archive) {
 /* Subroutine for finding the archive's table offset. If the
    minor_version is invalid, the program will exit.  */
 uint64_t get_table_offset(FILE *archive, uint8_t archive_version) {
-    fseek(archive, XP3_TABLE_OFFSET, SEEK_SET);
     uint64_t table_offset;
+    fseek(archive, XP3_TABLE_OFFSET, SEEK_SET);
     fread(&table_offset, sizeof(uint64_t), 1, archive);
     if (archive_version == 1)
         return table_offset;
-    /* Version 2 of XP3 contains a minor version field. */
+    /* The minor version is only present in XP3 version 2. */
     uint32_t minor_version;
     fread(&minor_version, sizeof(uint32_t), 1, archive);
     if (minor_version != 1) {
@@ -115,6 +101,7 @@ uint64_t get_table_offset(FILE *archive, uint8_t archive_version) {
     /* The read table_offset is actually an offset to the real
        table offset. XP3 Version 2 is a little strange. */
     fseek(archive, table_offset, SEEK_SET);
+    /* Flags and size of table are ignored in the parsing process. */
     fseek(archive, sizeof(uint8_t) + sizeof(uint64_t), SEEK_CUR);
     fread(&table_offset, sizeof(uint64_t), 1, archive);
     return table_offset;

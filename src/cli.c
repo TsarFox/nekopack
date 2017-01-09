@@ -22,6 +22,7 @@
 #include <getopt.h>
 
 #include "cli.h"
+#include "defs.h"
 
 #define VERSION "0.1.0"
 #define HELP_TEXT "A tool for decompressing the XP3 archives used by " \
@@ -35,8 +36,8 @@
 /* General subroutine for parsing command-line arguments. Returns a
    "configuration" structure containing everything parsed from argv. */
 struct configuration parse_args(int argc, char *argv[]) {
-    if (argc != 2) {
-        fprintf(stderr, "Usage: %s [OPTIONS] (ARCHIVE PATH)\n", argv[0]);
+    if (argc < 2) {
+        fprintf(stderr, "Usage: %s (ARCHIVE PATH) [OPTIONS]\n", argv[0]);
         exit(1);
     }
 
@@ -45,25 +46,39 @@ struct configuration parse_args(int argc, char *argv[]) {
     struct configuration parsed;
     memset(&parsed, 0, sizeof(parsed));
 
-    int current = 0, option_index = 0;
+    /* count represents the number of options parsed, regardless of
+       whether or not they were "long." This is kept track of so that
+       the user can supply an archive path as a positional argument. */
+    int current = 0, option_index = 0, count = 0;
     static struct option long_options[] = {
         {"help", no_argument, NULL, 'h'},
         {"version", no_argument, NULL, 'v'},
         {NULL, 0, NULL, 0}
     };
 
-    while (current >= 0) {
+    do {
         current = getopt_long(argc, argv, "hv", long_options, &option_index);
         switch (current) {
             case 'h':
                 printf("Usage: %s [OPTIONS] (ARCHIVE PATH)\n\n", argv[0]);
                 printf("%s\n", HELP_TEXT);
-                exit(0);
+                exit(EXIT_SUCCESS);
             case 'v':
                 printf("Nekopack, version %s\nProgrammed by "
                        "Jakob. <http://tsar-fox.com/>\n", VERSION);
-                exit(0);
+                exit(EXIT_SUCCESS);
         }
+        count++;
+    } while (current >= 0);
+
+    /* getopt "sorts" the argument array such that all of the flags come
+       first. argv[count] is the first positional argument encountered. */
+    if (parsed.archive_path == NULL) {
+        if (argv[count] == NULL) {
+            fprintf(stderr, "No archive path given.\n");
+            exit(EXIT_FAILURE);
+        }
+        parsed.archive_path = argv[count];
     }
 
     return parsed;

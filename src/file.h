@@ -17,11 +17,13 @@
 
 #pragma once
 
-/* Binary structure for storing command-line options. */
-struct configuration {
-    const char *archive_path; /* Path to archive to extract. */
-};
+#include <stdint.h>
 
-/* General subroutine for parsing command-line arguments. Returns a
-   "configuration" structure containing everything parsed from argv. */
-struct configuration parse_args(int argc, char *argv[]);
+typedef struct {
+    uint32_t filename_key;
+    uint64_t timestamp, compressed_size, decompressed_size, offset;
+} file_entry;
+// Decompressed/compressed size same in info/segm?
+
+/* Document and update documentation in header file. */
+void read_file_entry(memory_stream *data_stream, Bytef *section_end);
