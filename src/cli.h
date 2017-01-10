@@ -17,8 +17,20 @@
 
 #pragma once
 
+/* Enumerable type representing Nekopara games, as they have different
+   encryption keys. It's stored as an enum because multiple strcmp calls
+   to figure out how to decrypt is a waste of processor cycles. */
+typedef enum game {
+    NO_CRYPTO,
+    NEKOPARA_VOLUME_0,
+    NEKOPARA_VOLUME_0_STEAM,
+    NEKOPARA_VOLUME_1,
+    NEKOPARA_VOLUME_1_STEAM,
+} game;
+
 /* Binary structure for storing command-line options. */
 struct configuration {
+    game source; /* Which decryption key to use. */
     const char *archive_path; /* Path to archive to extract. */
 };
 

@@ -24,3 +24,8 @@
 /* Wrapper for inflate_chunk which operates on FILE pointers. The file
    pointer's contents are inflated into a memory stream and returned. */
 memory_stream decompress_file(FILE *archive, uint64_t sizes_offset);
+
+/* Returns a pointer to a buffer containing the
+   inflated contents of a given memory chunk. */
+Bytef *inflate_chunk(Bytef *chunk, uint64_t chunk_size,
+                     uint64_t decompressed_size);

@@ -17,8 +17,12 @@
 
 /* Because File entries won't necessarily follow the associated
    eliF entry, filenames and hashes are stored in a linked list. */
-typedef struct node {
-    uint32_t key;
-    char *file_name;
-    struct node *next;
-} node;
+typedef struct elif_node {
+    uint32_t key; /* Key associated with matching File entry. */
+    char *file_name; /* Name of file. */
+    struct elif_node *next; /* Pointer to the next node. */
+} elif_node;
+
+/* Iterates through the linked list of file entries and writes every
+   entry to disk, according to information specified by the node. */
+void write_files(file_node *file_root, elif_node *elif_root, Bytef *start);

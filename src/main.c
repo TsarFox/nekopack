@@ -16,7 +16,6 @@
    along with Nekopack. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <errno.h>
-#include <inttypes.h> // Needed for debugging at this point.
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>

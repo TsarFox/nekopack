@@ -19,11 +19,24 @@
 
 #include <stdint.h>
 
+/* Structure representing a 28-byte segment in a file. */
 typedef struct {
-    uint32_t filename_key;
-    uint64_t timestamp, compressed_size, decompressed_size, offset;
-} file_entry;
-// Decompressed/compressed size same in info/segm?
+    uint32_t compressed; /* Whether or not the chunk is compressed. */
+    uint64_t offset; /* Chunk's position in the file as an offset. */
+    uint64_t compressed_size; /* Chunk's compressed size. */
+    uint64_t decompressed_size; /* Chunk's decompressed size. */
+} segment;
 
-/* Document and update documentation in header file. */
-void read_file_entry(memory_stream *data_stream, Bytef *section_end);
+/* Node in a linked list of file entries to write to disk. */
+typedef struct file_node {
+    int compressed; /* Whether or not the archive is compressed. */
+    uint32_t key; /* Key associated with matching eliF entry. */
+    uint64_t compressed_size; /* Size of compressed chunk. */
+    uint64_t decompressed_size; /* Size of decompressed data. */
+    uint64_t segment_count; /* Number of segments in File entry. */
+    segment **segments; /* Data segments associated with the entry. */
+    struct file_node *next; /* Pointer to the next node. */
+} file_node;
+
+/* Creates a file node by parsing a file entry. */
+file_node *read_file_node(memory_stream *data_stream, Bytef *section_end);

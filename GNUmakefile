@@ -5,7 +5,7 @@ SHELL = /bin/sh
 
 CC := gcc
 LD := gcc
-CFLAGS := -Wall -Wextra -Os -funroll-all-loops
+CFLAGS := -Wall -Wextra -Os -funroll-all-loops -std=c99 -pedantic
 LDFLAGS := -lz
 STRIPARGS := -s -p
 

@@ -24,7 +24,8 @@
 #include "extract.h"
 
 
-/* Document and put in header. */
+/* Returns a pointer to a buffer containing the
+   inflated contents of a given memory chunk. */
 Bytef *inflate_chunk(Bytef *chunk, uint64_t chunk_size,
                      uint64_t decompressed_size) {
     Bytef *decompressed_data = malloc(decompressed_size);
@@ -77,7 +78,7 @@ memory_stream decompress_file(FILE *archive, uint64_t sizes_offset) {
     fread(&decompressed_size, sizeof(uint64_t), 1, archive);
 
     /* Decompression is done in memory because it's $CURRENT_YEAR. */
-    Bytef *compressed_data = malloc(compressed_size);
+    Bytef *decompressed_data, *compressed_data = malloc(compressed_size);
 
     /* This is a pretty shitty way of handling it, though. */
     if (compressed_data == NULL) {
@@ -88,22 +89,13 @@ memory_stream decompress_file(FILE *archive, uint64_t sizes_offset) {
     }
 
     fread(compressed_data, compressed_size, 1, archive);
-    /* if (ferror(archive)) { */
-    /*     fprintf(stderr, "File corrupt.\n"); */
-    /*     inflateEnd(&data_stream); */
-    /*     free(compressed_data); */
-    /*     free(decompressed_data); */
-    /*     exit(EXIT_FAILURE); */
-    /* } */
-    Bytef *decompressed_data = inflate_chunk(compressed_data, compressed_size,
-                                             decompressed_size);
-
+    decompressed_data = inflate_chunk(compressed_data, compressed_size,
+                                      decompressed_size);
     /* The compressed data is irrelevant at this point. */
     free(compressed_data);
     if (decompressed_data == NULL)
         exit(EXIT_FAILURE);
 
-    return (memory_stream) {decompressed_size,
-                            decompressed_data,
+    return (memory_stream) {decompressed_size, decompressed_data,
                             decompressed_data};
 }
