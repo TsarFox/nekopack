@@ -15,16 +15,18 @@
    You should have received a copy of the GNU General Public License
    along with Nekopack. If not, see <http://www.gnu.org/licenses/>. */
 
-#include <inttypes.h>
-#include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "crypto.h"
 #include "decompress.h"
 #include "extract.h"
 #include "file.h"
 #include "write.h"
+
+/* Global instance of the command-line configuration structure. */
+extern struct configuration arguments;
 
 
 /* Finds an eliF entry with the given key in a linked list and returns
@@ -51,33 +53,50 @@ char *pop_file_name(uint32_t key, elif_node *root) {
 
 /* Iterates through the linked list of file entries and writes every
    entry to disk, according to information specified by the node. */
-void write_files(file_node *file_root, elif_node *elif_root, Bytef *start) {
-    FILE *output;
+void write_files(file_node *file_root, elif_node *elif_root, FILE *archive) {
     file_node *current;
-    Bytef *compressed_buffer, *decompressed_buffer;
+    key encryption_key = get_encryption_key(arguments.source);
+    Bytef *compressed_buffer, *decompressed_buffer, *out_buffer, *out_start;
     for (current = file_root->next; current != NULL; current = current->next) {
         char *file_name = pop_file_name(current->key, elif_root);
-        if (file_name == NULL) {
-            fprintf(stderr, "File found without matching eliF entry.\n");
+        if (file_name == NULL)
             continue;
-        }
-        compressed_buffer = malloc(current->compressed_size);
-        for (int i = 0; i < current->segment_count; i++)
-            free(current->segments[i]);
-        free(current->segments);
-        /* memcpy(compressed_buffer, start + current->offset, */
-        /*        current->decompressed_size); */
-        /* if (current->compressed) { */
-        /*     fprintf(stderr, "Not implemented :^)\n"); // don't leave this in lol */
-        /*     continue; */
-        /* } else { */
-        /*     output = fopen(file_name, "wb+"); */
-        /*     fwrite(compressed_buffer, current->compressed_size, 1, output); */
-        /*     fclose(output); */
-        /* } */
 
-        free(compressed_buffer);
-        break;
+        /* out_start is kept so out_buffer can be incremented. */
+        out_buffer = malloc(current->file_size);
+        out_start = out_buffer;
+        for (uint64_t i = 0; i < current->segment_count; i++) {
+            segment *chunk = current->segments[i];
+            fseek(archive, chunk->offset, SEEK_SET);
+            compressed_buffer = malloc(chunk->compressed_size);
+            fread(compressed_buffer, chunk->compressed_size, 1, archive);
+
+            if (chunk->compressed) {
+                decompressed_buffer = inflate_chunk(compressed_buffer,
+                                                    chunk->compressed_size,
+                                                    chunk->decompressed_size);
+                free(compressed_buffer);
+            } else {
+                decompressed_buffer = compressed_buffer;
+            }
+            memcpy(out_buffer, decompressed_buffer, chunk->decompressed_size);
+            out_buffer += chunk->decompressed_size;
+            free(decompressed_buffer);
+        }
+
+        if (arguments.source != NO_CRYPTO) {
+            decrypt_buffer(out_start, current->file_size,
+                           encryption_key, current->key);
+        }
+
+        FILE *output = fopen(file_name, "wb+");
+        if (output == NULL) {
+            perror(file_name);
+            break;
+        }
+        fwrite(out_start, current->file_size, 1, output);
+        fclose(output);
+        free(out_start);
     }
 }
 
@@ -112,8 +131,11 @@ void defer_file_node(file_node *new, file_node *root) {
 
 /* Iterates through the linked list and frees all entries. */
 void free_elif_nodes(elif_node *base) {
-    if (base->next != NULL)
+    if (base->next != NULL) {
         free_elif_nodes(base->next);
+    }
+    if (base->file_name)
+        printf("%s\n", base->file_name);
     free(base->file_name);
     free(base);
 }
@@ -124,21 +146,4 @@ void free_file_nodes(file_node *base) {
     if (base->next != NULL)
         free_file_nodes(base->next);
     free(base);
-}
-
-
-void test_elif_linked_list(elif_node *root) {
-    for (elif_node *current = root; current != NULL; current = current->next) {
-        printf("ELIF NODE\n---------\n");
-        printf("KEY: %" PRIx32 "\n", current->key);
-        printf("FILE_NAME: %s\n\n", current->file_name);
-    }
-}
-
-
-void test_file_linked_list(file_node *root) {
-    for (file_node *current = root; current != NULL; current = current->next) {
-        printf("FILE NODE\n---------\n");
-        printf("KEY: %" PRIx32 "\n\n", current->key);
-    }
 }

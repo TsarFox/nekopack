@@ -50,7 +50,8 @@ file_node *read_file_entry(memory_stream *data_stream, Bytef *section_end) {
                 break;
             case SEGM_MAGIC:
                 printf("[SEGM found at 0x%lx]\n", data_stream->data - data_stream->start - 12);
-                read_segm_chunk(data_stream, parsed, entry_size);
+                /* Segments are 28 bytes each. */
+                read_segm_chunk(data_stream, parsed, entry_size / 28);
                 break;
             case INFO_MAGIC:
                 printf("[INFO found at 0x%lx]\n", data_stream->data - data_stream->start - 12);
@@ -69,7 +70,7 @@ file_node *read_file_entry(memory_stream *data_stream, Bytef *section_end) {
 }
 
 
-/* Document */
+/* Reads the contents of an info chunk int a file_node. */
 void read_info_chunk(memory_stream *data_stream, file_node *parsed) {
     uint32_t encrypted;
     uint64_t decompressed_size, compressed_size;
@@ -93,20 +94,18 @@ void read_info_chunk(memory_stream *data_stream, file_node *parsed) {
     }
     printf("\n");
 
+    parsed->encrypted = encrypted;
+
     data_stream->data += 2;
 }
 
 
-/* Document */
+/* Reads the contents of a segm chunk into a file_node. */
 void read_segm_chunk(memory_stream *data_stream, file_node *parsed,
                      uint64_t segment_count) {
-    /* The segment_count is in bytes, with each
-       segment being 28 bytes in length. */
-    segment_count /= 28;
-
     /* Segments are stored in an array of segment pointers. */
     segment **segments = malloc(sizeof(segment *) * segment_count);
-    for (int i = 0; i < segment_count; i++) {
+    for (uint64_t i = 0; i < segment_count; i++) {
         segments[i] = malloc(sizeof(segment));
         read_stream(&segments[i]->compressed,
                     &data_stream->data,
@@ -120,11 +119,12 @@ void read_segm_chunk(memory_stream *data_stream, file_node *parsed,
         read_stream(&segments[i]->compressed_size,
                     &data_stream->data,
                     sizeof(uint64_t));
+        parsed->file_size += segments[i]->decompressed_size;
     }
     printf("\nSEGMENT SECTION\n---------------\n\n");
     printf("SEGMENT_COUNT: %" PRIu64 "\n", segment_count);
-    for (int i = 0; i < segment_count; i++) {
-        printf("\SEGMENT %d\n----------\n", i);
+    for (uint64_t i = 0; i < segment_count; i++) {
+        printf("\nSEGMENT %" PRIu64 "\n----------\n", i);
         printf("%s\n", segments[i]->compressed ? "COMPRESSED" : "DECOMPRESSED");
         printf("FILE_OFFSET: %" PRIu64 "\n", segments[i]->offset);
         printf("COMPRESSED_SIZE: %" PRIu64 "\n", segments[i]->compressed_size);
@@ -135,7 +135,7 @@ void read_segm_chunk(memory_stream *data_stream, file_node *parsed,
 }
 
 
-/* Document */
+/* Reads the contents of an adlr chunk into a file_node. */
 void read_adlr_chunk(memory_stream *data_stream, file_node *parsed) {
     uint32_t key;
     read_stream(&key, &data_stream->data, sizeof(uint32_t));
@@ -143,7 +143,7 @@ void read_adlr_chunk(memory_stream *data_stream, file_node *parsed) {
 }
 
 
-/* Document */
+/* Reads the contents of a time chunk into a file_node. */
 void read_time_chunk(memory_stream *data_stream, file_node *parsed) {
     uint64_t timestamp;
     read_stream(&timestamp, &data_stream->data, sizeof(uint64_t));

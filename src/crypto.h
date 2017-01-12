@@ -17,23 +17,23 @@
 
 #pragma once
 
-#include <stdio.h>
 #include <stdint.h>
 
 #include <zlib.h>
 
-/* Structure representing a "stream" in memory. A pointer to the
-   start of the memory region is kept for freeing purposes. */
+#include "cli.h"
+
+/* Struct for a game's encryption keys.  */
 typedef struct {
-    uint64_t stream_length;
-    Bytef *start;
-    Bytef *data;
-} memory_stream;
+    int uses_initial_key; /* Set if first byte uses a different key. */
+    uint32_t master_key; /* Master key used to derive a key. */
+    uint8_t initial_fallback_key; /* Fallback for the initial key. */
+    uint8_t primary_fallback_key; /* Fallback for the primary key. */
+} key;
 
-/* Handles decompression of the archive, as well as
-   parsing, decrypting and writing the table entries. */
-void extract(FILE *archive, uint64_t table_offset);
+/* Returns the encryption keys for a given game value. */
+key get_encryption_key(game current_game);
 
-/* Wrapper for memcpy which increments the source operand by
-   the amount of bytes read to simulate a file stream. */
-void read_stream(void *destination, Bytef **source, size_t size);
+/* Decrypts the contents of a buffer according to a file key. */
+void decrypt_buffer(Bytef *encrypted_buffer, uint64_t buffer_length,
+                    key encryption_key, uint32_t file_key);

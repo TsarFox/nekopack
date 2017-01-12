@@ -29,14 +29,14 @@ typedef struct {
 
 /* Node in a linked list of file entries to write to disk. */
 typedef struct file_node {
-    int compressed; /* Whether or not the archive is compressed. */
+    int encrypted; /* Whether or not the entry is encrypted. */
+    int compressed; /* Whether or not the entry is compressed. */
     uint32_t key; /* Key associated with matching eliF entry. */
-    uint64_t compressed_size; /* Size of compressed chunk. */
-    uint64_t decompressed_size; /* Size of decompressed data. */
+    uint64_t file_size; /* Total size of decompressed file. */
     uint64_t segment_count; /* Number of segments in File entry. */
     segment **segments; /* Data segments associated with the entry. */
     struct file_node *next; /* Pointer to the next node. */
 } file_node;
 
 /* Creates a file node by parsing a file entry. */
-file_node *read_file_node(memory_stream *data_stream, Bytef *section_end);
+file_node *read_file_entry(memory_stream *data_stream, Bytef *section_end);

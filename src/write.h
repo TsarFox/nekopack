@@ -25,4 +25,16 @@ typedef struct elif_node {
 
 /* Iterates through the linked list of file entries and writes every
    entry to disk, according to information specified by the node. */
-void write_files(file_node *file_root, elif_node *elif_root, Bytef *start);
+void write_files(file_node *file_root, elif_node *elif_root, FILE *archive);
+
+/* Inserts an eliF entry at the end of a linked list. */
+void defer_elif_node(elif_node *new, elif_node *root);
+
+/* Inserts a File entry node at the end of a linked list. */
+void defer_file_node(file_node *new, file_node *root);
+
+/* Iterates through the linked list and frees all entries. */
+void free_elif_nodes(elif_node *base);
+
+/* Iterates through the linked list and frees all entries. */
+void free_file_nodes(file_node *base);

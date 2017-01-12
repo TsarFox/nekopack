@@ -44,33 +44,28 @@ void read_stream(void *destination, Bytef **source, size_t size);
    parsing, decrypting and writing the table entries. */
 void extract(FILE *archive, uint64_t table_offset) {
     /* eliF and File entries are stored in a linked list as they're
-       seen, because the order of entries in XP3 archives is not
+       seen because the order of entries in XP3 archives is not
        guaranteed to be chronological. calloc is used to prevent the
        "next" pointer from being garbage and causing a segfault. */
-    elif_node *elif_root = calloc(sizeof(elif_node), 1);
-    elif_node *elif_new;
-    file_node *file_root = calloc(sizeof(file_node), 1);
-    file_node *file_new;
+    elif_node *elif_new, *elif_root = calloc(sizeof(elif_node), 1);
+    file_node *file_new, *file_root = calloc(sizeof(file_node), 1);
 
     uint8_t compressed;
+    uint64_t compressed_size, decompressed_size;
     fseek(archive, table_offset, SEEK_SET);
     fread(&compressed, sizeof(uint8_t), 1, archive);
+    fread(&compressed_size, sizeof(uint64_t), 1, archive);
+    fread(&decompressed_size, sizeof(uint64_t), 1, archive);
 
     int stream_ended = 0;
     memory_stream data_stream;
+    memory_stream compressed_data = read_to_stream(archive, compressed_size);
     if (compressed) {
-        data_stream = decompress_file(archive, ftell(archive));
+        data_stream = decompress_stream(compressed_data, decompressed_size);
+        free(compressed_data.start);
     } else {
-        uint64_t decompressed_size;
-        fread(&decompressed_size, sizeof(uint64_t), 1, archive);
-        /* The second size is irrelevant and therefore ignored. */
-        fseek(archive, sizeof(uint64_t), SEEK_CUR);
-        data_stream.stream_length = decompressed_size;
-        data_stream.data = malloc(decompressed_size);
-        data_stream.start = data_stream.data;
-        fread(data_stream.data, decompressed_size, 1, archive);
-        fclose(archive);
-    }
+        data_stream = compressed_data;
+    }    
 
     uint32_t entry_magic;
     uint64_t entry_size;
@@ -102,9 +97,7 @@ void extract(FILE *archive, uint64_t table_offset) {
         }
     } while (!stream_ended);
 
-    write_files(file_root, elif_root, data_stream.start);
-    test_elif_linked_list(elif_root);
-    test_file_linked_list(file_root);
+    write_files(file_root, elif_root, archive);
     free_elif_nodes(elif_root);
     free_file_nodes(file_root);
     free(data_stream.start);
@@ -129,8 +122,8 @@ elif_node *read_elif_entry(memory_stream *data_stream) {
 
     char *file_name;
     if (name_size < 0x100) {
-        /* Strings are terminated by null bytes, but
-           they aren't counted in the name size. */
+        /* Strings are terminated by null bytes,
+           which aren't counted in the name size. */
         char *input_buffer = malloc(name_size * 2 + 2);
         file_name = malloc(name_size + 1);
         read_stream(input_buffer, &data_stream->data, name_size * 2 + 2);
@@ -145,8 +138,7 @@ elif_node *read_elif_entry(memory_stream *data_stream) {
 
         free(input_buffer);
     } else {
-        /* It's pretty safe to assume anything
-           larger is the copyright notice. */
+        /* It's safe to assume too large is the copyright notice. */
         data_stream->data += name_size * 2 + 2;
         file_name = strdup("COPYING.txt");
     }

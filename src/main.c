@@ -97,10 +97,9 @@ uint64_t get_table_offset(FILE *archive, uint8_t archive_version) {
         fprintf(stderr, "Minor version not implemented.\n");
         fclose(archive);
     }
-    /* The read table_offset is actually an offset to the real
-       table offset. XP3 Version 2 is a little strange. */
+    /* The read table_offset is an offset to the real table offset. */
     fseek(archive, table_offset, SEEK_SET);
-    /* Flags and size of table are ignored in the parsing process. */
+    /* Table flags and size are ignored in the parsing process. */
     fseek(archive, sizeof(uint8_t) + sizeof(uint64_t), SEEK_CUR);
     fread(&table_offset, sizeof(uint64_t), 1, archive);
     return table_offset;

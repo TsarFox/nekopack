@@ -44,7 +44,7 @@
    "configuration" structure containing everything parsed from argv. */
 struct configuration parse_args(int argc, char *argv[]) {
     if (argc < 2) {
-        fprintf(stderr, "Usage: %s (ARCHIVE PATH) [OPTIONS]\n", argv[0]);
+        fprintf(stderr, "Usage: %s [OPTIONS] (ARCHIVE PATH)\n", argv[0]);
         exit(1);
     }
 
@@ -102,7 +102,7 @@ struct configuration parse_args(int argc, char *argv[]) {
        first. argv[count] is the first positional argument encountered. */
     if (parsed.archive_path == NULL) {
         if (argv[count] == NULL) {
-            fprintf(stderr, "No archive path given.\n");
+            fprintf(stderr, "No archive path provided.\n");
             exit(EXIT_FAILURE);
         }
         parsed.archive_path = argv[count];

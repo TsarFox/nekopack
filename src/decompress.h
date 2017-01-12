@@ -21,9 +21,11 @@
 
 #include "extract.h"
 
-/* Wrapper for inflate_chunk which operates on FILE pointers. The file
-   pointer's contents are inflated into a memory stream and returned. */
-memory_stream decompress_file(FILE *archive, uint64_t sizes_offset);
+/* Decompresses a memory_stream data structure into a new one. */
+memory_stream decompress_stream(memory_stream compressed_data, uint64_t size);
+
+/* Reads a FILE pointer into a memory_stream data structure. */
+memory_stream read_to_stream(FILE *archive, uint64_t buffer_size);
 
 /* Returns a pointer to a buffer containing the
    inflated contents of a given memory chunk. */

@@ -63,39 +63,41 @@ Bytef *inflate_chunk(Bytef *chunk, uint64_t chunk_size,
         } while (data_stream.avail_out == 0);
     } while (status_code != Z_STREAM_END);
 
-    inflateEnd(&data_stream);
+    // inflateEnd(&data_stream);
 
     return decompressed_data;
 }
 
 
-/* Wrapper for inflate_chunk which operates on FILE pointers. The file
-   pointer's contents are inflated into a memory stream and returned. */
-memory_stream decompress_file(FILE *archive, uint64_t sizes_offset) {
-    uint64_t compressed_size, decompressed_size;
-    fseek(archive, sizes_offset, SEEK_SET);
-    fread(&compressed_size, sizeof(uint64_t), 1, archive);
-    fread(&decompressed_size, sizeof(uint64_t), 1, archive);
-
-    /* Decompression is done in memory because it's $CURRENT_YEAR. */
-    Bytef *decompressed_data, *compressed_data = malloc(compressed_size);
-
-    /* This is a pretty shitty way of handling it, though. */
-    if (compressed_data == NULL) {
+/* Decompresses a memory_stream data structure into a new one. */
+memory_stream decompress_stream(memory_stream compressed_data, uint64_t size) {
+    Bytef *decompressed_data = malloc(size);
+    /* This is a pretty shitty way of handling it. */
+    if (decompressed_data == NULL) {
         fprintf(stderr, "Insufficient memory to decompress archive.\n");
-        free(compressed_data);
+        free(compressed_data.start);
+        free(decompressed_data);
+        exit(EXIT_FAILURE);
+    }
+    decompressed_data = inflate_chunk(compressed_data.start,
+                                      compressed_data.stream_length,
+                                      size);
+    if (decompressed_data == NULL)
+        exit(EXIT_FAILURE);
+    return (memory_stream) {size, decompressed_data, decompressed_data};
+}
+
+
+/* Reads a FILE pointer into a memory_stream data structure. */
+memory_stream read_to_stream(FILE *archive, uint64_t buffer_size) {
+    Bytef *buffer = malloc(buffer_size);
+    /* This is a pretty shitty way of handling it. */
+    if (buffer == NULL) {
+        fprintf(stderr, "Insufficient memory to load archive.\n");
+        free(buffer);
         fclose(archive);
         exit(EXIT_FAILURE);
     }
-
-    fread(compressed_data, compressed_size, 1, archive);
-    decompressed_data = inflate_chunk(compressed_data, compressed_size,
-                                      decompressed_size);
-    /* The compressed data is irrelevant at this point. */
-    free(compressed_data);
-    if (decompressed_data == NULL)
-        exit(EXIT_FAILURE);
-
-    return (memory_stream) {decompressed_size, decompressed_data,
-                            decompressed_data};
+    fread(buffer, buffer_size, 1, archive);
+    return (memory_stream) {buffer_size, buffer, buffer};
 }
