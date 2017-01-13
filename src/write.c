@@ -134,8 +134,6 @@ void free_elif_nodes(elif_node *base) {
     if (base->next != NULL) {
         free_elif_nodes(base->next);
     }
-    if (base->file_name)
-        printf("%s\n", base->file_name);
     free(base->file_name);
     free(base);
 }

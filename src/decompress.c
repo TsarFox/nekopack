@@ -63,7 +63,7 @@ Bytef *inflate_chunk(Bytef *chunk, uint64_t chunk_size,
         } while (data_stream.avail_out == 0);
     } while (status_code != Z_STREAM_END);
 
-    // inflateEnd(&data_stream);
+    inflateEnd(&data_stream);
 
     return decompressed_data;
 }

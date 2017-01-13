@@ -65,15 +65,13 @@ void extract(FILE *archive, uint64_t table_offset) {
         free(compressed_data.start);
     } else {
         data_stream = compressed_data;
-    }    
+    }
 
     uint32_t entry_magic;
     uint64_t entry_size;
     do {
         read_stream(&entry_magic, &data_stream.data, sizeof(uint32_t));
         read_stream(&entry_size, &data_stream.data, sizeof(uint64_t));
-        printf("entry at 0x%lx\n", data_stream.data - data_stream.start - 12);
-        printf("Magic: %" PRIx32 " Size: %" PRIx64 "\n", entry_magic, entry_size);
 
         switch (entry_magic) {
             /* hnfn, neko, and eliF entries are all identical.
@@ -92,7 +90,6 @@ void extract(FILE *archive, uint64_t table_offset) {
                 defer_file_node(file_new, file_root);
                 break;
             default:
-                printf("End of archive reached.\n");
                 stream_ended = 1;
         }
     } while (!stream_ended);
@@ -125,13 +122,18 @@ elif_node *read_elif_entry(memory_stream *data_stream) {
         /* Strings are terminated by null bytes,
            which aren't counted in the name size. */
         char *input_buffer = malloc(name_size * 2 + 2);
-        file_name = malloc(name_size + 1);
         read_stream(input_buffer, &data_stream->data, name_size * 2 + 2);
+
+        /* name_size + 1 is unreliable since we're going back to UTF-8
+           and some characters (especially Japanese ones) can be wide.
+           To compensate we just allocate a buffer that could fit the
+           UTF-16LE data and utilize null-bytes to terminate names. */
+        file_name = malloc(name_size * 2 + 2);
 
         /* iconv is the less-portable glibc way of doing it. It seems to
            be in the OpenBSD manpages, though, so I'm not worried. */
+        size_t in_size = name_size * 2 + 2, out_size = name_size * 2 + 2;
         char *in_start = input_buffer, *out_start = file_name;
-        size_t in_size = name_size * 2 + 2, out_size = name_size + 1;
         iconv_t conversion = iconv_open("UTF-8", "UTF-16LE");
         iconv(conversion, &in_start, &in_size, &out_start, &out_size);
         iconv_close(conversion);
