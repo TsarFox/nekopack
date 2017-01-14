@@ -22,6 +22,7 @@
 #include <string.h>
 
 #include "cli.h"
+#include "decompress.h"
 #include "extract.h"
 
 #define XP3_MAGIC "XP3\x0d\x0a\x20\x0a\x1a\x8b\x67\x01"
@@ -51,7 +52,34 @@ int main(int argc, char *argv[]) {
 
     int archive_version = get_archive_version(archive);
     uint64_t table_offset = get_table_offset(archive, archive_version);
-    extract(archive, table_offset);
+
+    uint8_t compressed;
+    uint64_t compressed_size, decompressed_size;
+    fseek(archive, table_offset, SEEK_SET);
+    fread(&compressed, sizeof(uint8_t), 1, archive);
+    fread(&compressed_size, sizeof(uint64_t), 1, archive);
+    fread(&decompressed_size, sizeof(uint64_t), 1, archive);
+
+    /* Every task that hasn't already been handled needs a decompressed
+       instance of the archive table. Decompression done in memory
+       because it's $CURRENT_YEAR. */
+    memory_stream data_stream;
+    memory_stream compressed_data = read_to_stream(archive, compressed_size);
+    if (compressed) {
+        data_stream = decompress_stream(compressed_data, decompressed_size);
+        free(compressed_data.start);
+    } else {
+        data_stream = compressed_data;
+    }
+
+    switch (arguments.mode) {
+        case EXTRACT:
+            extract(data_stream, archive);
+            break;
+        case LIST:
+            list(data_stream);
+    }
+    free(data_stream.start);
     fclose(archive);
     return 0;
 }

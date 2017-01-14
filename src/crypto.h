@@ -32,7 +32,7 @@ typedef struct {
 } key;
 
 /* Returns the encryption keys for a given game value. */
-key get_encryption_key(game current_game);
+key get_encryption_key(game_type game);
 
 /* Decrypts the contents of a buffer according to a file key. */
 void decrypt_buffer(Bytef *encrypted_buffer, uint64_t buffer_length,

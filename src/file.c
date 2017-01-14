@@ -40,6 +40,8 @@ file_node *read_file_entry(memory_stream *data_stream, Bytef *section_end) {
     uint32_t entry_magic;
     uint64_t entry_size;
     file_node *parsed = calloc(sizeof(file_node), 1);
+    if (parsed == NULL)
+        return NULL;
     while (data_stream->data < section_end) {
         read_stream(&entry_magic, &data_stream->data, sizeof(uint32_t));
         read_stream(&entry_size, &data_stream->data, sizeof(uint64_t));
@@ -50,6 +52,11 @@ file_node *read_file_entry(memory_stream *data_stream, Bytef *section_end) {
             case SEGM_MAGIC:
                 /* Segments are 28 bytes each. */
                 read_segm_chunk(data_stream, parsed, entry_size / 28);
+                /* Check if segments was successfully allocated. */
+                if (parsed->segments == NULL) {
+                    free(parsed);
+                    return NULL;
+                }
                 break;
             case INFO_MAGIC:
                 read_info_chunk(data_stream, parsed);
@@ -78,6 +85,7 @@ void read_info_chunk(memory_stream *data_stream, file_node *parsed) {
 
     char *file_name = malloc(file_name_size * 2 + 2);
     read_stream(file_name, &data_stream->data, file_name_size * 2 + 2);
+    free(file_name);
 }
 
 
@@ -86,6 +94,8 @@ void read_segm_chunk(memory_stream *data_stream, file_node *parsed,
                      uint64_t segment_count) {
     /* Segments are stored in an array of segment pointers. */
     segment **segments = malloc(sizeof(segment *) * segment_count);
+    if (segments == NULL)
+        return;
     for (uint64_t i = 0; i < segment_count; i++) {
         segments[i] = malloc(sizeof(segment));
         read_stream(&segments[i]->compressed,

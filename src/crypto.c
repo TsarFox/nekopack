@@ -20,9 +20,9 @@
 
 
 /* Returns the encryption keys for a given game value. */
-key get_encryption_key(game current_game) {
+key get_encryption_key(game_type game) {
     key encryption_key;
-    switch (current_game) {
+    switch (game) {
         case NEKOPARA_VOLUME_0:
             encryption_key.master_key = 0x1548e29c;
             encryption_key.initial_fallback_key = 0x9c;

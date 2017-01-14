@@ -31,7 +31,9 @@
                   "exit.\n" \
                   "   -v, --version\tDisplay the currently installed " \
                   "version and exit.\n\n" \
-                  "   -l, --list\t\tList games supported by Nekopack.\n" \
+                  "   -e, --extract\tExtract the contents of the archive. " \
+                  "This is the default.\n" \
+                  "   -l, --list\t\tList the contents of the archive.\n\n" \
                   "   -a, --archive\tAlternate way of specifying archive" \
                   "to extract.\n" \
                   "   -g, --game\t\tGame the archive is from. Required for " \
@@ -64,19 +66,17 @@ struct configuration parse_args(int argc, char *argv[]) {
     };
 
     do {
-        current = getopt_long(argc, argv, "hvla:g:", long_options,
+        current = getopt_long(argc, argv, "hvela:g:", long_options,
                               &option_index);
         switch (current) {
             case 'h':
                 printf("Usage: %s [OPTIONS] (ARCHIVE PATH)\n\n", argv[0]);
-                printf("%s\n", HELP_TEXT);
+                printf("%s\n\n", HELP_TEXT);
+                printf("Supported Game Crypto:\n%s\n", GAME_CONSTANTS);
                 exit(EXIT_SUCCESS);
             case 'v':
                 printf("Nekopack, version %s\nProgrammed by "
                        "Jakob. <http://tsar-fox.com/>\n", VERSION);
-                exit(EXIT_SUCCESS);
-            case 'l':
-                printf("%s\n", GAME_CONSTANTS);
                 exit(EXIT_SUCCESS);
             case 'a':
                 count++;
@@ -84,16 +84,25 @@ struct configuration parse_args(int argc, char *argv[]) {
                 break;
             case 'g':
                 count++;
+                /* Out of concern for efficiency, string comparisons are
+                   done here and the source game is stored in an enum. */
                 if (!strcmp(optarg, "nekopara_volume_0"))
-                    parsed.source = NEKOPARA_VOLUME_0;
+                    parsed.game = NEKOPARA_VOLUME_0;
                 else if (!strcmp(optarg, "nekopara_volume_0_steam"))
-                    parsed.source = NEKOPARA_VOLUME_0_STEAM;
+                    parsed.game = NEKOPARA_VOLUME_0_STEAM;
                 else if (!strcmp(optarg, "nekopara_volume_1"))
-                    parsed.source = NEKOPARA_VOLUME_1;
+                    parsed.game = NEKOPARA_VOLUME_1;
                 else if (!strcmp(optarg, "nekopara_volume_1_steam"))
-                    parsed.source = NEKOPARA_VOLUME_1_STEAM;
+                    parsed.game = NEKOPARA_VOLUME_1_STEAM;
                 else
-                    parsed.source = NO_CRYPTO;
+                    parsed.game = NO_CRYPTO;
+                break;
+            case 'e':
+                /* '-e' is still parsed to provide consisency. */
+                parsed.mode = EXTRACT;
+                break;
+            case 'l':
+                parsed.mode = LIST;
         }
         count++;
     } while (current >= 0);

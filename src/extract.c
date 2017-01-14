@@ -15,7 +15,6 @@
    You should have received a copy of the GNU General Public License
    along with Nekopack. If not, see <http://www.gnu.org/licenses/>. */
 
-#include <inttypes.h> // Needed for debugging at this point.
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -26,7 +25,6 @@
 
 #include "cli.h"
 #include "defs.h"
-#include "decompress.h"
 #include "extract.h"
 #include "file.h"
 #include "write.h"
@@ -40,9 +38,9 @@ elif_node *read_elif_entry(memory_stream *data_stream);
 void read_stream(void *destination, Bytef **source, size_t size);
 
 
-/* Handles decompression of the archive, as well as
-   parsing, decrypting and writing the table entries. */
-void extract(FILE *archive, uint64_t table_offset) {
+/* Decrypts and writes files in the XP3 archive
+   to disk according to table entries. */
+void extract(memory_stream data_stream, FILE *archive) {
     /* eliF and File entries are stored in a linked list as they're
        seen because the order of entries in XP3 archives is not
        guaranteed to be chronological. calloc is used to prevent the
@@ -50,23 +48,7 @@ void extract(FILE *archive, uint64_t table_offset) {
     elif_node *elif_new, *elif_root = calloc(sizeof(elif_node), 1);
     file_node *file_new, *file_root = calloc(sizeof(file_node), 1);
 
-    uint8_t compressed;
-    uint64_t compressed_size, decompressed_size;
-    fseek(archive, table_offset, SEEK_SET);
-    fread(&compressed, sizeof(uint8_t), 1, archive);
-    fread(&compressed_size, sizeof(uint64_t), 1, archive);
-    fread(&decompressed_size, sizeof(uint64_t), 1, archive);
-
     int stream_ended = 0;
-    memory_stream data_stream;
-    memory_stream compressed_data = read_to_stream(archive, compressed_size);
-    if (compressed) {
-        data_stream = decompress_stream(compressed_data, decompressed_size);
-        free(compressed_data.start);
-    } else {
-        data_stream = compressed_data;
-    }
-
     uint32_t entry_magic;
     uint64_t entry_size;
     do {
@@ -82,11 +64,23 @@ void extract(FILE *archive, uint64_t table_offset) {
             case HNFN_MAGIC:
             case NEKO_MAGIC:
                 elif_new = read_elif_entry(&data_stream);
+                if (elif_new == NULL) {
+                    fprintf(stderr, "Insufficient memory.\n");
+                    free_elif_nodes(elif_root);
+                    free_file_nodes(file_root);
+                    return;
+                }
                 defer_elif_node(elif_new, elif_root);
                 break;
             case FILE_MAGIC:
                 file_new = read_file_entry(&data_stream,
                                            data_stream.data + entry_size);
+                if (file_new == NULL) {
+                    fprintf(stderr, "Insufficient memory.\n");
+                    free_elif_nodes(elif_root);
+                    free_file_nodes(file_root);
+                    return;
+                }
                 defer_file_node(file_new, file_root);
                 break;
             default:
@@ -97,7 +91,35 @@ void extract(FILE *archive, uint64_t table_offset) {
     write_files(file_root, elif_root, archive);
     free_elif_nodes(elif_root);
     free_file_nodes(file_root);
-    free(data_stream.start);
+}
+
+
+/* Simply lists the contents of an archive, ignoring File entries. */
+void list(memory_stream data_stream) {
+    int stream_ended = 0;
+    uint32_t entry_magic;
+    uint64_t entry_size;
+    elif_node *temporary;
+    do {
+        read_stream(&entry_magic, &data_stream.data, sizeof(uint32_t));
+        read_stream(&entry_size, &data_stream.data, sizeof(uint64_t));
+
+        switch (entry_magic) {
+            case ELIF_MAGIC:
+            case HNFN_MAGIC:
+            case NEKO_MAGIC:
+                temporary = read_elif_entry(&data_stream);
+                printf("%s\n", temporary->file_name);
+                free(temporary->file_name);
+                free(temporary);
+                break;
+            case FILE_MAGIC:
+                data_stream.data += entry_size;
+                break;
+            default:
+                stream_ended = 1;
+        }
+    } while (!stream_ended);
 }
 
 
@@ -123,12 +145,18 @@ elif_node *read_elif_entry(memory_stream *data_stream) {
            which aren't counted in the name size. */
         char *input_buffer = malloc(name_size * 2 + 2);
         read_stream(input_buffer, &data_stream->data, name_size * 2 + 2);
+        if (input_buffer == NULL)
+            return NULL;
 
         /* name_size + 1 is unreliable since we're going back to UTF-8
            and some characters (especially Japanese ones) can be wide.
            To compensate we just allocate a buffer that could fit the
            UTF-16LE data and utilize null-bytes to terminate names. */
         file_name = malloc(name_size * 2 + 2);
+        if (file_name == NULL) {
+            free(input_buffer);
+            return NULL;
+        }
 
         /* iconv is the less-portable glibc way of doing it. It seems to
            be in the OpenBSD manpages, though, so I'm not worried. */
@@ -146,6 +174,10 @@ elif_node *read_elif_entry(memory_stream *data_stream) {
     }
 
     elif_node *current = malloc(sizeof(elif_node));
+    if (current == NULL) {
+        free(file_name);
+        return NULL;
+    }
     current->key = file_key;
     current->file_name = file_name;
     current->next = NULL;

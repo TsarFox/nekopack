@@ -20,17 +20,25 @@
 /* Enumerable type representing Nekopara games, as they have different
    encryption keys. It's stored as an enum because multiple strcmp calls
    to figure out how to decrypt is a waste of processor cycles. */
-typedef enum game {
+typedef enum game_type {
     NO_CRYPTO,
     NEKOPARA_VOLUME_0,
     NEKOPARA_VOLUME_0_STEAM,
     NEKOPARA_VOLUME_1,
     NEKOPARA_VOLUME_1_STEAM,
-} game;
+} game_type;
+
+/* Enumerable type for mode of operation. Used in the main function
+   to decide what to do after the initial XP3 sanity checks. */
+typedef enum mode_type {
+    EXTRACT,
+    LIST,
+} mode_type;
 
 /* Binary structure for storing command-line options. */
 struct configuration {
-    game source; /* Which decryption key to use. */
+    game_type game; /* Which decryption key to use. */
+    mode_type mode; /* What to do after initial sanity checks. */
     const char *archive_path; /* Path to archive to extract. */
 };
 

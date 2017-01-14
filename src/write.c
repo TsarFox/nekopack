@@ -55,7 +55,7 @@ char *pop_file_name(uint32_t key, elif_node *root) {
    entry to disk, according to information specified by the node. */
 void write_files(file_node *file_root, elif_node *elif_root, FILE *archive) {
     file_node *current;
-    key encryption_key = get_encryption_key(arguments.source);
+    key encryption_key = get_encryption_key(arguments.game);
     Bytef *compressed_buffer, *decompressed_buffer, *out_buffer, *out_start;
     for (current = file_root->next; current != NULL; current = current->next) {
         char *file_name = pop_file_name(current->key, elif_root);
@@ -84,7 +84,7 @@ void write_files(file_node *file_root, elif_node *elif_root, FILE *archive) {
             free(decompressed_buffer);
         }
 
-        if (arguments.source != NO_CRYPTO) {
+        if (arguments.game != NO_CRYPTO) {
             decrypt_buffer(out_start, current->file_size,
                            encryption_key, current->key);
         }

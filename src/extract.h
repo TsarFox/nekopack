@@ -30,9 +30,12 @@ typedef struct {
     Bytef *data;
 } memory_stream;
 
-/* Handles decompression of the archive, as well as
-   parsing, decrypting and writing the table entries. */
-void extract(FILE *archive, uint64_t table_offset);
+/* Decrypts and writes files in the XP3 archive
+   to disk according to table entries. */
+void extract(memory_stream data_stream, FILE *archive);
+
+/* Simply lists the contents of an archive, ignoring File entries. */
+void list(memory_stream data_stream);
 
 /* Wrapper for memcpy which increments the source operand by
    the amount of bytes read to simulate a file stream. */
