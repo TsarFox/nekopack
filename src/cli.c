@@ -37,7 +37,9 @@
                   "   -a, --archive\tAlternate way of specifying archive" \
                   "to extract.\n" \
                   "   -g, --game\t\tGame the archive is from. Required for " \
-                  "file decryption"
+                  "file decryption\n" \
+                  "   -q, --quiet\t\tDon't display information about " \
+                  "extracted files."
 #define GAME_CONSTANTS "none, nekopara_volume_0, nekopara_volume_0_steam, " \
                        "nekopara_volume_1, nekopara_volume_1_steam"
 
@@ -47,7 +49,7 @@
 struct configuration parse_args(int argc, char *argv[]) {
     if (argc < 2) {
         fprintf(stderr, "Usage: %s [OPTIONS] (ARCHIVE PATH)\n", argv[0]);
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     /* The struct has to be zeroed out, otherwise argument parsing
@@ -62,11 +64,16 @@ struct configuration parse_args(int argc, char *argv[]) {
     static struct option long_options[] = {
         {"help", no_argument, NULL, 'h'},
         {"version", no_argument, NULL, 'v'},
+        {"quiet", no_argument, NULL, 'q'},
+        {"extract", no_argument, NULL, 'e'},
+        {"list", no_argument, NULL, 'l'},
+        {"archive", required_argument, NULL, 'a'},
+        {"game", required_argument, NULL, 'g'},
         {NULL, 0, NULL, 0}
     };
 
     do {
-        current = getopt_long(argc, argv, "hvela:g:", long_options,
+        current = getopt_long(argc, argv, "hvelqa:g:", long_options,
                               &option_index);
         switch (current) {
             case 'h':
@@ -78,6 +85,9 @@ struct configuration parse_args(int argc, char *argv[]) {
                 printf("Nekopack, version %s\nProgrammed by "
                        "Jakob. <http://tsar-fox.com/>\n", VERSION);
                 exit(EXIT_SUCCESS);
+            case 'q':
+                parsed.quiet = 1;
+                break;
             case 'a':
                 count++;
                 parsed.archive_path = optarg;

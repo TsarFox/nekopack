@@ -15,6 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with Nekopack. If not, see <http://www.gnu.org/licenses/>. */
 
+#include <inttypes.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -62,8 +63,18 @@ void write_files(file_node *file_root, elif_node *elif_root, FILE *archive) {
         if (file_name == NULL)
             continue;
 
-        /* out_start is kept so out_buffer can be incremented. */
+        if (!arguments.quiet) {
+            printf("Inflating %s (%" PRIu64 " bytes)\n",
+                   file_name, current->file_size);
+        }
+
         out_buffer = malloc(current->file_size);
+        if (out_buffer == NULL) {
+            fprintf(stderr, "Insufficient memory to decompress.\n");
+            return;
+        }
+
+        /* out_start is kept so out_buffer can be incremented. */
         out_start = out_buffer;
         for (uint64_t i = 0; i < current->segment_count; i++) {
             segment *chunk = current->segments[i];
@@ -96,6 +107,7 @@ void write_files(file_node *file_root, elif_node *elif_root, FILE *archive) {
         }
         fwrite(out_start, current->file_size, 1, output);
         fclose(output);
+        free(file_name);
         free(out_start);
     }
 }

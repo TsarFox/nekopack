@@ -37,6 +37,7 @@ typedef enum mode_type {
 
 /* Binary structure for storing command-line options. */
 struct configuration {
+    int quiet; /* Level of output verbosity. */
     game_type game; /* Which decryption key to use. */
     mode_type mode; /* What to do after initial sanity checks. */
     const char *archive_path; /* Path to archive to extract. */
