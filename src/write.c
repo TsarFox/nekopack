@@ -15,6 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with Nekopack. If not, see <http://www.gnu.org/licenses/>. */
 
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <inttypes.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -49,6 +51,23 @@ char *pop_file_name(uint32_t key, elif_node *root) {
         }
     }
     return file_name;
+}
+
+
+/* Creates all of the paths in a filename. */
+void make_paths(char *file_name) {
+    /* Max filename size. */
+    char *buffer = calloc(0x100, 1);
+    char *buffer_start = buffer;
+    for (int i = 0; i < 0x100 && file_name[i] != '\0'; i++) {
+        *buffer++ = file_name[i];
+        if (file_name[i] == '/') {
+            *buffer = '\0';
+            printf("Creating directory %s\n", buffer_start);
+            mkdir(buffer_start, 0777);
+        }
+    }
+    free(buffer_start);
 }
 
 
@@ -100,6 +119,7 @@ void write_files(file_node *file_root, elif_node *elif_root, FILE *archive) {
                            encryption_key, current->key);
         }
 
+        make_paths(file_name);
         FILE *output = fopen(file_name, "wb+");
         if (output == NULL) {
             perror(file_name);
