@@ -110,8 +110,8 @@ int get_archive_version(FILE *archive) {
 }
 
 
-/* Subroutine for finding the archive's table offset. If the
-   minor_version is invalid, the program will exit.  */
+/* Subroutine for finding the archive's table offset. If
+   the minor_version is invalid, the program will exit.  */
 uint64_t get_table_offset(FILE *archive, uint8_t archive_version) {
     uint64_t table_offset;
     fseek(archive, XP3_TABLE_OFFSET, SEEK_SET);
@@ -122,8 +122,9 @@ uint64_t get_table_offset(FILE *archive, uint8_t archive_version) {
     uint32_t minor_version;
     fread(&minor_version, sizeof(uint32_t), 1, archive);
     if (minor_version != 1) {
-        fprintf(stderr, "Minor version not implemented.\n");
+        fprintf(stderr, "Archive version not implemented.\n");
         fclose(archive);
+        exit(EXIT_FAILURE);
     }
     /* The read table_offset is an offset to the real table offset. */
     fseek(archive, table_offset, SEEK_SET);

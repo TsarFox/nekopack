@@ -19,3 +19,9 @@
 
 #define EXIT_SUCCESS 0
 #define EXIT_FAILURE 1
+
+#ifdef WINDOWS
+#define PATH_DELIMITER '\\'
+#else
+#define PATH_DELIMITER '/'
+#endif

@@ -24,6 +24,7 @@
 
 #include "crypto.h"
 #include "decompress.h"
+#include "defs.h"
 #include "extract.h"
 #include "file.h"
 #include "write.h"
@@ -56,15 +57,22 @@ char *pop_file_name(uint32_t key, elif_node *root) {
 
 /* Creates all of the paths in a filename. */
 void make_paths(char *file_name) {
+    /* This structure is only used for the stat call. */
+    struct stat temp = {0};
+
     /* Max filename size. */
     char *buffer = calloc(0x100, 1);
     char *buffer_start = buffer;
     for (int i = 0; i < 0x100 && file_name[i] != '\0'; i++) {
-        *buffer++ = file_name[i];
         if (file_name[i] == '/') {
+            *buffer++ = PATH_DELIMITER;
             *buffer = '\0';
-            printf("Creating directory %s\n", buffer_start);
-            mkdir(buffer_start, 0777);
+            if (stat(buffer_start, &temp) == -1) {
+                printf("Creating directory %s\n", buffer_start);
+                mkdir(buffer_start, 0777);
+            }
+        } else {
+            *buffer++ = file_name[i];
         }
     }
     free(buffer_start);
