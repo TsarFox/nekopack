@@ -40,12 +40,14 @@ struct configuration arguments;
 int main(int argc, char *argv[]) {
     arguments = parse_args(argc, argv);
 
-    FILE *archive = fopen(arguments.archive_path, "rb");
+    FILE *archive = fopen(arguments.archive, "rb");
     if (archive == NULL) {
-        perror(arguments.archive_path);
+        /* Including the expanded path in the error message is
+           much more useful to the user than `perror("fopen")`. */
+        perror(arguments.archive);
         exit(EXIT_FAILURE);
     } else if (!is_xp3_archive(archive)) {
-        fprintf(stderr, "File is not an XP3 archive.\n");
+        fprintf(stderr, "%s is not an XP3 archive.\n", arguments.archive);
         fclose(archive);
         exit(EXIT_FAILURE);
     }
@@ -60,9 +62,9 @@ int main(int argc, char *argv[]) {
     fread(&compressed_size, sizeof(uint64_t), 1, archive);
     fread(&decompressed_size, sizeof(uint64_t), 1, archive);
 
-    /* Every task that hasn't already been handled needs a decompressed
-       instance of the archive table. Decompression done in memory
-       because it's $CURRENT_YEAR. */
+    /* Every task that hasn't already been handled needs a
+       decompressed instance of the archive table. Decompression
+       done in memory because it's $CURRENT_YEAR. */
     memory_stream data_stream;
     memory_stream compressed_data = read_to_stream(archive, compressed_size);
     if (compressed) {
@@ -79,34 +81,34 @@ int main(int argc, char *argv[]) {
         case LIST:
             list(data_stream);
     }
+
     free(data_stream.start);
     fclose(archive);
     return 0;
 }
 
 
-/* Simple check of the archive's magic number to decide
-   whether or not it represents a valid XP3 archive. */
+/* Check of the file's magic number to decide
+   whether or not the file a valid XP3 archive. */
 int is_xp3_archive(FILE *archive) {
-    char* magic_buffer = malloc(11);
+    int ret = 1;
+    char* buffer = malloc(11);
     rewind(archive);
-    fread(magic_buffer, 11, 1, archive);
-    if (memcmp(magic_buffer, XP3_MAGIC, 11)) {
-        free(magic_buffer);
-        return 0;
-    }
-    free(magic_buffer);
-    return 1;
+    fread(buffer, 11, 1, archive);
+    if (memcmp(buffer, XP3_MAGIC, 11))
+        ret = 0;
+    free(buffer);
+    return ret;
 }
 
 
 /* Returns the version of XP3 used to pack the archive. */
 int get_archive_version(FILE *archive) {
-    uint32_t version_word;
+    uint32_t version;
     fseek(archive, XP3_VERSION_OFFSET, SEEK_SET);
-    fread(&version_word, sizeof(uint32_t), 1, archive);
+    fread(&version, sizeof(uint32_t), 1, archive);
     /* 0x00 indicates version 1, and 0x01 indicates version 2. */
-    return version_word == 1 ? 2 : 1;
+    return version == 1 ? 2 : 1;
 }
 
 
@@ -118,6 +120,7 @@ uint64_t get_table_offset(FILE *archive, uint8_t archive_version) {
     fread(&table_offset, sizeof(uint64_t), 1, archive);
     if (archive_version == 1)
         return table_offset;
+
     /* The minor version is only present in XP3 version 2. */
     uint32_t minor_version;
     fread(&minor_version, sizeof(uint32_t), 1, archive);
@@ -126,9 +129,12 @@ uint64_t get_table_offset(FILE *archive, uint8_t archive_version) {
         fclose(archive);
         exit(EXIT_FAILURE);
     }
-    /* The read table_offset is an offset to the real table offset. */
+
+    /* The value initally read as table_offset is actually an offset to
+       the real table offset. (Try saying that five times fast.) */
     fseek(archive, table_offset, SEEK_SET);
-    /* Table flags and size are ignored in the parsing process. */
+    /* Table flags and size are ignored in the parsing process,
+       but are read anyway to advance the FILE pointer. */
     fseek(archive, sizeof(uint8_t) + sizeof(uint64_t), SEEK_CUR);
     fread(&table_offset, sizeof(uint64_t), 1, archive);
     return table_offset;

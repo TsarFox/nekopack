@@ -38,8 +38,9 @@ elif_node *read_elif_entry(memory_stream *data_stream);
 void read_stream(void *destination, Bytef **source, size_t size);
 
 
-/* Decrypts and writes files in the XP3 archive
-   to disk according to table entries. */
+/* Decompresses, decrypts, and writes files in the XP3 archive to disk
+   according to entries in the table. Will return prematurely if there
+   isn't enough memory to store the linked lists. */
 void extract(memory_stream data_stream, FILE *archive) {
     /* eliF and File entries are stored in a linked list as they're
        seen because the order of entries in XP3 archives is not
@@ -94,7 +95,7 @@ void extract(memory_stream data_stream, FILE *archive) {
 }
 
 
-/* Simply lists the contents of an archive, ignoring File entries. */
+/* Writes the associated filename for each eliF entry in the table. */
 void list(memory_stream data_stream) {
     int stream_ended = 0;
     uint32_t entry_magic;
@@ -123,16 +124,17 @@ void list(memory_stream data_stream) {
 }
 
 
-/* Wrapper for memcpy which increments the source operand by
-   the amount of bytes read to simulate a file stream. */
+/* Wrapper for memcpy which increments the source operand
+   by the amount of bytes read to simulate a file stream. */
 void read_stream(void *destination, Bytef **source, size_t size) {
     memcpy(destination, *source, size);
     *source += size;
 }
 
 
-/* Returns a pointer to a elif_node containing the filename
-   and key, which can be deferred in a linked list. */
+/* Creates a node for an eliF entry, which can be deferred in a linked
+   list. NULL will be returned if there isn't enough memory to contain
+   the node structure or the filenames. */
 elif_node *read_elif_entry(memory_stream *data_stream) {
     uint32_t file_key;
     uint16_t name_size;
@@ -141,8 +143,8 @@ elif_node *read_elif_entry(memory_stream *data_stream) {
 
     char *file_name;
     if (name_size < 0x100) {
-        /* Strings are terminated by null bytes,
-           which aren't counted in the name size. */
+        /* The filenames are terminated by null bytes,
+           but that isn't counted in the name size. */
         char *input_buffer = malloc(name_size * 2 + 2);
         read_stream(input_buffer, &data_stream->data, name_size * 2 + 2);
         if (input_buffer == NULL)
@@ -168,18 +170,19 @@ elif_node *read_elif_entry(memory_stream *data_stream) {
 
         free(input_buffer);
     } else {
-        /* It's safe to assume too large is the copyright notice. */
+        /* It's safe to assume that a filename that
+           large is the flashy copyright notice. */
         data_stream->data += name_size * 2 + 2;
         file_name = strdup("COPYING.txt");
     }
 
-    elif_node *current = malloc(sizeof(elif_node));
-    if (current == NULL) {
+    elif_node *parsed = malloc(sizeof(elif_node));
+    if (parsed == NULL) {
         free(file_name);
         return NULL;
     }
-    current->key = file_key;
-    current->file_name = file_name;
-    current->next = NULL;
-    return current;
+    parsed->key = file_key;
+    parsed->file_name = file_name;
+    parsed->next = NULL;
+    return parsed;
 }

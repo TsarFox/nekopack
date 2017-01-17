@@ -35,7 +35,9 @@ void read_segm_chunk(memory_stream *data_stream, file_node *parsed,
                      uint64_t segment_count);
 
 
-/* Creates a file node by parsing a file entry. */
+/* Creates a node for a File entry, which can be deferred in a linked
+   list. NULL will be returned if there isn't enough memory to contain
+   the node structure. */
 file_node *read_file_entry(memory_stream *data_stream, Bytef *section_end) {
     uint32_t entry_magic;
     uint64_t entry_size;
@@ -50,9 +52,11 @@ file_node *read_file_entry(memory_stream *data_stream, Bytef *section_end) {
                 read_adlr_chunk(data_stream, parsed);
                 break;
             case SEGM_MAGIC:
-                /* Segments are 28 bytes each. */
+                /* The segment count is not included in the table and
+                   has to be calculated. Segments are 28 bytes each. */
                 read_segm_chunk(data_stream, parsed, entry_size / 28);
-                /* Check if segments was successfully allocated. */
+                /* There can't really be a check for this
+                   in read_segm_chunk, so it's done here. */
                 if (parsed->segments == NULL) {
                     free(parsed);
                     return NULL;
@@ -72,7 +76,7 @@ file_node *read_file_entry(memory_stream *data_stream, Bytef *section_end) {
 }
 
 
-/* Reads the contents of an info chunk int a file_node. */
+/* Reads the contents of an info chunk into a file node. */
 void read_info_chunk(memory_stream *data_stream, file_node *parsed) {
     uint32_t encrypted;
     uint64_t decompressed_size, compressed_size;
@@ -89,13 +93,14 @@ void read_info_chunk(memory_stream *data_stream, file_node *parsed) {
 }
 
 
-/* Reads the contents of a segm chunk into a file_node. */
+/* Reads the contents of a segm chunk into a file node. */
 void read_segm_chunk(memory_stream *data_stream, file_node *parsed,
                      uint64_t segment_count) {
     /* Segments are stored in an array of segment pointers. */
     segment **segments = malloc(sizeof(segment *) * segment_count);
     if (segments == NULL)
         return;
+
     for (uint64_t i = 0; i < segment_count; i++) {
         segments[i] = malloc(sizeof(segment));
         read_stream(&segments[i]->compressed,

@@ -19,7 +19,7 @@
 
 #include <stdint.h>
 
-/* Structure representing a 28-byte segment in a file. */
+/* Structure representing a segment in a file. */
 typedef struct {
     uint32_t compressed; /* Whether or not the chunk is compressed. */
     uint64_t offset; /* Chunk's position in the file as an offset. */

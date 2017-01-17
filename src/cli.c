@@ -90,7 +90,7 @@ struct configuration parse_args(int argc, char *argv[]) {
                 break;
             case 'a':
                 count++;
-                parsed.archive_path = optarg;
+                parsed.archive = optarg;
                 break;
             case 'g':
                 count++;
@@ -108,7 +108,8 @@ struct configuration parse_args(int argc, char *argv[]) {
                     parsed.game = NO_CRYPTO;
                 break;
             case 'e':
-                /* '-e' is still parsed to provide consisency. */
+                /* Despite being the default, '-e' is
+                   still parsed to provide consisency. */
                 parsed.mode = EXTRACT;
                 break;
             case 'l':
@@ -119,12 +120,12 @@ struct configuration parse_args(int argc, char *argv[]) {
 
     /* getopt "sorts" the argument array such that all of the flags come
        first. argv[count] is the first positional argument encountered. */
-    if (parsed.archive_path == NULL) {
+    if (parsed.archive == NULL) {
         if (argv[count] == NULL) {
             fprintf(stderr, "No archive path provided.\n");
             exit(EXIT_FAILURE);
         }
-        parsed.archive_path = argv[count];
+        parsed.archive = argv[count];
     }
 
     return parsed;

@@ -24,8 +24,8 @@
 #include "extract.h"
 
 
-/* Returns a pointer to a buffer containing the
-   inflated contents of a given memory chunk. */
+/* Inflates a chunk into new space in memory. NULL is returned if not
+   enough memory can be allocated to contain the decompressed data. */
 Bytef *inflate_chunk(Bytef *chunk, uint64_t chunk_size,
                      uint64_t decompressed_size) {
     Bytef *decompressed_data = malloc(decompressed_size);
@@ -55,7 +55,6 @@ Bytef *inflate_chunk(Bytef *chunk, uint64_t chunk_size,
         if (data_stream.avail_in == 0)
             break;
         data_stream.next_in = chunk;
-        // Flushing probably isn't required here.
         do {
             data_stream.avail_out = decompressed_size;
             data_stream.next_out = decompressed_data;
@@ -64,26 +63,22 @@ Bytef *inflate_chunk(Bytef *chunk, uint64_t chunk_size,
     } while (status_code != Z_STREAM_END);
 
     inflateEnd(&data_stream);
-
     return decompressed_data;
 }
 
 
-/* Decompresses a memory_stream data structure into a new one. */
+/* Decompresses the contents of a memory_stream data structure.
+   Program exits if not enough memory can be allocated. */
 memory_stream decompress_stream(memory_stream compressed_data, uint64_t size) {
-    Bytef *decompressed_data = malloc(size);
-    /* This is a pretty shitty way of handling it. */
+    uint64_t chunk_size = compressed_data.stream_length;
+    Bytef *decompressed_data, *chunk = compressed_data.start;
+
+    decompressed_data = inflate_chunk(chunk, chunk_size, size);
     if (decompressed_data == NULL) {
-        fprintf(stderr, "Insufficient memory to decompress archive.\n");
-        free(compressed_data.start);
-        free(decompressed_data);
+        free(chunk);
         exit(EXIT_FAILURE);
     }
-    decompressed_data = inflate_chunk(compressed_data.start,
-                                      compressed_data.stream_length,
-                                      size);
-    if (decompressed_data == NULL)
-        exit(EXIT_FAILURE);
+
     return (memory_stream) {size, decompressed_data, decompressed_data};
 }
 

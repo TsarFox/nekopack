@@ -18,6 +18,6 @@ The binary can be stripped with `make strip`.
 Thanks
 ------
 * [The NEKO WORKs Team](http://nekopara.com/main.html) for developing this game. Reversing the archive format was a challenge that gave me a feeling of purpose when I needed it most.
-* [Marcin Kurczewski](https://github.com/rr-) for his work on [Arc Unpacker](https://github.com/vn-tools/arc_unpacker), which I used as a reference when writing various section parsers.
+* [Marcin Kurczewski](https://github.com/rr-) for his work on [Arc Unpacker](https://github.com/vn-tools/arc_unpacker), which I used as a reference when writing various XP3 section parsers.
 * [SmilingWolf](https://bitbucket.org/SmilingWolf/) for finding and publishing the encryption keys used by Nekopara.
 * [Elizabeth R.](http://www.dafont.com/elizabeth-r.d2925) for the font used in this project's logo.

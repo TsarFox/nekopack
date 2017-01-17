@@ -15,6 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with Nekopack. If not, see <http://www.gnu.org/licenses/>. */
 
+#pragma once
+
 /* Because File entries won't necessarily follow the associated
    eliF entry, filenames and hashes are stored in a linked list. */
 typedef struct elif_node {
