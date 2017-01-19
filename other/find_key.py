@@ -41,31 +41,39 @@ def get_file_keys(path):
     return file_keys
 
 
+def setup_structures(magic_byte, paths, file_keys):
+    """Parses every file in a given list of paths such that a structure
+    exists containing a byte from the known plaintext, the encrypted
+    byte, and the integer used to derive an encryption key. This
+    massively decreases IO overhead.
+    """
+    structures = []
+    for path in paths:
+        file_key = file_keys[path]
+        with open(path, "rb") as encrypted:
+            encrypted_byte = encrypted.read()[1]
+            structures.append((magic_byte, encrypted_byte, file_key))
+    return structures
+
+
 def derive_primary_key(master_key, file_key):
     """Derives a single-XOR key from given master and file keys."""
     base_key = file_key ^ master_key
     return (base_key >> 24 ^ base_key >> 16 ^ base_key >> 8 ^ base_key) & 0xff
 
 
-def try_master_key(master_key, file_keys, files_path):
-    """Attempts a master key, returning True if and only if it
-    was able to decrypt every file in the given files_path.
+def try_master_key(structures, key):
+    """Attempts decryption on a list of structures, returning True if
+    and only if it was successful in decrypting them.
     """
-    for extension, magic_byte in KNOWN_MAGICS:
-        files = find_files(extension, files_path)
-        for path in files:
-            file_key = file_keys.get(path)
-            if file_key is None:
-                sys.stderr.write("%s: No file key.\n" % path)
-                continue
-            primary_key = derive_primary_key(key, file_key)
-            if primary_key == 0:
-                continue
-            elif master_key ^ file_key == 0 or master_key ^ file_key & 0xff == 1:
-                continue
-            with open(path, "rb") as encrypted:
-                if encrypted.read()[1] ^ primary_key != magic_byte:
-                    return False
+    for desired_byte, encrypted_byte, file_key in structures:
+        primary_key = derive_primary_key(key, file_key)
+        if primary_key == 0:
+            continue
+        elif key ^ file_key == 0 or key ^ file_key & 0xff == 1:
+            continue
+        if encrypted_byte ^ primary_key != desired_byte:
+            return False
     return True
 
 
@@ -82,11 +90,16 @@ if __name__ == "__main__":
         sys.stderr.write("USAGE: %s [file keys] [path]\n" % sys.argv[0])
         sys.exit(1)
 
-    potential_keys = []
+    structures = []
     file_keys = get_file_keys(sys.argv[1])
+    for extension, magic in KNOWN_MAGICS:
+        paths = find_files(extension, ".")
+        structures += setup_structures(magic, paths, file_keys)
+
+    potential_keys = []
     for key in range(KEY_SEARCH_SPACE):
         print(get_progress_message(key), end="")
-        if try_master_key(key, file_keys, sys.argv[2]):
+        if try_master_key(structures, key):
             potential_keys.append(hex(key))
     print("Potential keys:")
     for key in potential_keys:
