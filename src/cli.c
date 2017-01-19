@@ -36,6 +36,7 @@
                   "   -l, --list\t\tList the contents of the archive.\n\n" \
                   "   -a, --archive\tAlternate way of specifying archive" \
                   "to extract.\n" \
+                  "   -o, --output\t\tPath to extract files to.\n" \
                   "   -g, --game\t\tGame the archive is from. Required for " \
                   "file decryption\n" \
                   "   -q, --quiet\t\tDon't display information about " \
@@ -68,12 +69,13 @@ struct configuration parse_args(int argc, char *argv[]) {
         {"extract", no_argument, NULL, 'e'},
         {"list", no_argument, NULL, 'l'},
         {"archive", required_argument, NULL, 'a'},
+        {"output", required_argument, NULL, 'o'},
         {"game", required_argument, NULL, 'g'},
         {NULL, 0, NULL, 0}
     };
 
     do {
-        current = getopt_long(argc, argv, "hvelqa:g:", long_options,
+        current = getopt_long(argc, argv, "hvelqa:o:g:", long_options,
                               &option_index);
         switch (current) {
             case 'h':
@@ -91,6 +93,14 @@ struct configuration parse_args(int argc, char *argv[]) {
             case 'a':
                 count++;
                 parsed.archive = optarg;
+                break;
+            case 'o':
+                count++;
+                size_t path_size = strlen(optarg);
+                parsed.output = malloc(path_size + 1);
+                strcpy(parsed.output, optarg);
+                if (parsed.output[path_size - 1] != PATH_DELIMITER)
+                    parsed.output[path_size] = PATH_DELIMITER;
                 break;
             case 'g':
                 count++;
@@ -126,6 +136,14 @@ struct configuration parse_args(int argc, char *argv[]) {
             exit(EXIT_FAILURE);
         }
         parsed.archive = argv[count];
+    }
+
+    /* The output path is allocated on the heap to simplify freeing. */
+    if (parsed.output == NULL) {
+        if ((parsed.output = strdup(".")) == NULL) {
+            fprintf(stderr, "Insufficient memory.\n");
+            exit(EXIT_FAILURE);
+        }
     }
 
     return parsed;

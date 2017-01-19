@@ -90,6 +90,18 @@ void write_files(file_node *file_root, elif_node *elif_root, FILE *archive) {
         if (file_name == NULL)
             continue;
 
+        /* strcpy is used rather than strcat to prevent the file
+           name from being appended after garbage data. */
+        size_t file_name_size = strlen(file_name);
+        size_t path_size = strlen(arguments.output);
+        char *output_path = malloc(path_size + file_name_size + 1);
+        if (output_path == NULL) {
+            fprintf(stderr, "Insufficient memory.\n");
+            return;
+        }
+        strcpy(output_path, arguments.output);
+        strcpy(output_path + path_size, file_name);
+
         if (!arguments.quiet) {
             printf("Inflating %s (%" PRIu64 " bytes)\n",
                    file_name, current->file_size);
@@ -127,14 +139,15 @@ void write_files(file_node *file_root, elif_node *elif_root, FILE *archive) {
                            encryption_key, current->key);
         }
 
-        make_paths(file_name);
-        FILE *output = fopen(file_name, "wb+");
+        make_paths(output_path);
+        FILE *output = fopen(output_path, "wb+");
         if (output == NULL) {
-            perror(file_name);
+            perror(output_path);
             break;
         }
         fwrite(out_start, current->file_size, 1, output);
         fclose(output);
+        free(output_path);
         free(file_name);
         free(out_start);
     }

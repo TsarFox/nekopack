@@ -40,6 +40,7 @@ struct configuration {
     int quiet; /* Level of output verbosity. */
     game_type game; /* Which decryption key to use. */
     mode_type mode; /* What to do after initial sanity checks. */
+    char *output; /* Path to extract files to. */
     const char *archive; /* Path to archive to extract. */
 };
 

@@ -82,6 +82,7 @@ int main(int argc, char *argv[]) {
             list(data_stream);
     }
 
+    free(arguments.output);
     free(data_stream.start);
     fclose(archive);
     return 0;
