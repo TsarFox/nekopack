@@ -68,7 +68,8 @@ void make_paths(char *file_name) {
             *buffer++ = PATH_DELIMITER;
             *buffer = '\0';
             if (stat(buffer_start, &temp) == -1) {
-                printf("Creating directory %s\n", buffer_start);
+                if (!arguments.quiet)
+                    printf("Creating directory %s\n", buffer_start);
                 mkdir(buffer_start, 0777);
             }
         } else {

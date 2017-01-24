@@ -64,12 +64,13 @@ void decrypt_buffer(Bytef *encrypted_buffer, uint64_t buffer_length,
     uint8_t initial_key = xor_key & 0xff;
     uint8_t primary_key = (xor_key >> 24 ^ xor_key >> 16 ^ \
                            xor_key >> 8 ^ xor_key) & 0xff;
-    if (xor_key == 1 && initial_key == 0)
-        initial_key = encryption_key.initial_fallback_key;
-    else if (primary_key == 0)
+    if (primary_key == 0)
         primary_key = encryption_key.primary_fallback_key;
-    if (encryption_key.uses_initial_key)
+    if (encryption_key.uses_initial_key) {
+        if (initial_key == 0)
+            initial_key = encryption_key.initial_fallback_key;
         encrypted_buffer[0] ^= initial_key;
+    }
     for (uint64_t i = 0; i < buffer_length; i++) {
         encrypted_buffer[i] ^= primary_key;
     }
