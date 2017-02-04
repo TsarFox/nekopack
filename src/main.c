@@ -29,6 +29,7 @@
 #define XP3_TABLE_OFFSET 11
 #define XP3_VERSION_OFFSET 19
 
+void handle_archive(char *path);
 int is_xp3_archive(FILE *archive);
 int get_archive_version(FILE *archive);
 uint64_t get_table_offset(FILE *archive, uint8_t archive_version);
@@ -39,15 +40,23 @@ struct configuration arguments;
 
 int main(int argc, char *argv[]) {
     arguments = parse_args(argc, argv);
+    for (int i = arguments.vararg_index; i < argc; i++)
+        handle_archive(argv[i]);
+    free(arguments.output);
+    return 0;
+}
 
-    FILE *archive = fopen(arguments.archive, "rb");
+
+/* Extracts the archive at the specified path. */
+void handle_archive(char *path) {
+    FILE *archive = fopen(path, "rb");
     if (archive == NULL) {
         /* Including the expanded path in the error message is
            much more useful to the user than `perror("fopen")`. */
-        perror(arguments.archive);
+        perror(path);
         exit(EXIT_FAILURE);
     } else if (!is_xp3_archive(archive)) {
-        fprintf(stderr, "%s is not an XP3 archive.\n", arguments.archive);
+        fprintf(stderr, "%s is not an XP3 archive.\n", path);
         fclose(archive);
         exit(EXIT_FAILURE);
     }
@@ -82,10 +91,8 @@ int main(int argc, char *argv[]) {
             list(data_stream);
     }
 
-    free(arguments.output);
     free(data_stream.start);
     fclose(archive);
-    return 0;
 }
 
 

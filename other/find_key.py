@@ -18,6 +18,7 @@ KNOWN_MAGICS = [("png", b"\x89\x50\x4e\x47\x0d\x0a\x1a\x0a"),
                 ("ogg", b"\x4f\x67\x67\x53"),
                 ("psb", b"\x50\x53\x42\x00"),
                 ("mstand", b"\xff\xfe"),
+                # ("tjs", b"\xff\xfe"),
                 ("csv", b"\xff\xfe")]
 
 

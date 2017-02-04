@@ -34,8 +34,6 @@
                   "   -e, --extract\tExtract the contents of the archive. " \
                   "This is the default.\n" \
                   "   -l, --list\t\tList the contents of the archive.\n\n" \
-                  "   -a, --archive\tAlternate way of specifying archive" \
-                  "to extract.\n" \
                   "   -o, --output\t\tPath to extract files to.\n" \
                   "   -g, --game\t\tGame the archive is from. Required for " \
                   "file decryption\n" \
@@ -68,14 +66,13 @@ struct configuration parse_args(int argc, char *argv[]) {
         {"quiet", no_argument, NULL, 'q'},
         {"extract", no_argument, NULL, 'e'},
         {"list", no_argument, NULL, 'l'},
-        {"archive", required_argument, NULL, 'a'},
         {"output", required_argument, NULL, 'o'},
         {"game", required_argument, NULL, 'g'},
         {NULL, 0, NULL, 0}
     };
 
     do {
-        current = getopt_long(argc, argv, "hvelqa:o:g:", long_options,
+        current = getopt_long(argc, argv, "hvelqo:g:", long_options,
                               &option_index);
         switch (current) {
             case 'h':
@@ -89,10 +86,6 @@ struct configuration parse_args(int argc, char *argv[]) {
                 exit(EXIT_SUCCESS);
             case 'q':
                 parsed.quiet = 1;
-                break;
-            case 'a':
-                count++;
-                parsed.archive = optarg;
                 break;
             case 'o':
                 count++;
@@ -128,15 +121,13 @@ struct configuration parse_args(int argc, char *argv[]) {
         count++;
     } while (current >= 0);
 
-    /* getopt "sorts" the argument array such that all of the flags come
-       first. argv[count] is the first positional argument encountered. */
-    if (parsed.archive == NULL) {
-        if (argv[count] == NULL) {
-            fprintf(stderr, "No archive path provided.\n");
-            exit(EXIT_FAILURE);
-        }
-        parsed.archive = argv[count];
+    /* getopt pushes non-flag arguments to the end of argv, and `count`
+       is only incremented when a flag argument is parsed. */
+    if (count == argc) {
+        fprintf(stderr, "No archive path provided.\n");
+        exit(EXIT_FAILURE);
     }
+    parsed.vararg_index = count;
 
     /* The output path is allocated on the heap to simplify freeing. */
     if (parsed.output == NULL) {
