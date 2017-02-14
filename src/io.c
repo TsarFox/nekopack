@@ -18,19 +18,21 @@
    along with Nekopack. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "io.h"
 
 
-/* Allocates `len` bytes of memory and returns a new stream pointing to
-   it. The memory provided has not zeroed. */
+/* Allocates `len` bytes of non-zeroed memory and returns a new stream
+   structure pointing to it. */
 struct stream *stream_new(size_t len) {
-    stream *new = malloc(sizeof(stream));
+    struct stream *new = malloc(sizeof(struct stream));
     new->len = len;
     new->_start = malloc(len);
     new->_cur = new->_start;
-    new->_location = HEAP;
+    new->_loc = HEAP;
+    return new;
 }
 
 
@@ -46,17 +48,17 @@ void stream_free(struct stream *s) {
 
 
 /* Copies `n` bytes from the given stream into the memory area specified
-   by `dest`. The stream is advanced appropriately. */
+   by `dest`. The stream's cursor is advanced appropriately. */
 void stream_read(void *dest, struct stream *s, size_t n) {
     memcpy(dest, s->_cur, n);
-    (char *) s->_cur += n;
+    s->_cur += n;
 }
 
 
 /* Copies `n` bytes into the given stream from the memory area specified
-   by `src`. The stream is advanced appropriately. */
-void stream_write(struct stream *s, void *src, size_t n) { 
-    if (s->cur + n > s->start + s->len) {
+   by `src`. The stream's cursor is advanced appropriately. */
+void stream_write(struct stream *s, void *src, size_t n) {
+    if (s->_cur + n > s->_start + s->len) {
         ptrdiff_t dist = (uintptr_t) s->_cur - (uintptr_t) s->_start;
         switch(s->_loc) {
             case HEAP:
@@ -64,6 +66,6 @@ void stream_write(struct stream *s, void *src, size_t n) {
                 s->_cur = s->_start + dist;
         }
     }
-    memcpy(s->cur, src, n);
-    s->cur += n;
+    memcpy(s->_cur, src, n);
+    s->_cur += n;
 }
