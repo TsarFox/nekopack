@@ -21,3 +21,6 @@
 
 char *test_stream_obj(void);
 char *test_stream_rw(void);
+char *test_stream_realloc(void);
+char *test_stream_xor(void);
+char *test_stream_nav(void);

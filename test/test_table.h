@@ -1,4 +1,4 @@
-/* test_header.h -- MinUnit test cases for header.c
+/* test_table.h -- MinUnit test cases for table.c
 
    Copyright (C) 2017 Jakob Tsar-Fox, All Rights Reserved.
 
@@ -19,4 +19,4 @@
 
 #pragma once
 
-char *test_header_read(void);
+char *test_table_list(void);

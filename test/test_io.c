@@ -17,6 +17,7 @@
    You should have received a copy of the GNU General Public License
    along with Nekopack. If not, see <http://www.gnu.org/licenses/>. */
 
+#include <stdint.h>
 #include <string.h>
 
 #include "minunit.h"
@@ -51,6 +52,38 @@ char *test_stream_rw(void) {
     stream_read(dest, s, 4);
     mu_assert("Read failure", !memcmp(dest, "\x00\x01\x02\x03", 4));
     mu_assert("Cursor not incremented", s->_cur - s->_start == 4);
+    stream_free(s);
+    return NULL;
+}
+
+
+char *test_stream_realloc(void) {
+    struct stream *s = stream_new(0x2);
+    stream_write(s, "\x00\x01\x02\x03", 4);
+    mu_assert("`len` not modified", s->len > 0x2);
+    return NULL;
+}
+
+
+char *test_stream_xor(void) {
+    struct stream *s = stream_new(2);
+    stream_write(s, "\x01\x01", 2);
+    stream_xor(s, 1, 0);
+    mu_assert("Initial key failure", !memcmp(s->_start, "\x00\x01", 2));
+    stream_xor(s, 0, 1);
+    mu_assert("Primary key failure", !memcmp(s->_start, "\x01\x00", 2));
+    stream_free(s);
+    return NULL;
+}
+
+
+char *test_stream_nav(void) {
+    struct stream *s = stream_new(2);
+    mu_assert("Cursor not at beginning", stream_tell(s) == 0);
+    stream_seek(s, 2);
+    mu_assert("Cursor not advanced", stream_tell(s) == 2);
+    stream_rewind(s);
+    mu_assert("Cursor not rewinded", stream_tell(s) == 0);
     stream_free(s);
     return NULL;
 }

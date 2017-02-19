@@ -28,15 +28,26 @@ static bool is_xp3(struct xp3_header *h);
 static bool is_supported(struct xp3_header *h);
 
 
-/* Reads data from the given stream into a newly allocated xp3_header
-   structure. The stream is assumed to be at the header's beginning.
-   NULL is returned if the header contains an invalid magic number, or
-   if the archive's version is not supported. */
+/* Reads from the given stream into a newly allocated xp3_header
+   structure. NULL is returned if the header contains an invalid magic
+   number, or if the archive's version is not supported. */
 struct xp3_header *read_header(struct stream *s) {
     struct xp3_header *h = malloc(sizeof(struct xp3_header));
     if (h == NULL) return NULL;
-    stream_read(h, s, sizeof(struct xp3_header));
-    if (!is_xp3(h) || !is_supported(h)) {free(h); return NULL;}
+
+    /* The header structure can't be read into directly because of
+       potential alignment issues. */
+    stream_read(h->magic, s, 11);
+    stream_read(&h->info_offset, s, sizeof(uint64_t));
+    stream_read(&h->version, s, sizeof(uint32_t));
+    stream_read(&h->table_size, s, sizeof(uint64_t));
+    stream_read(&h->flags, s, sizeof(uint8_t));
+    stream_read(&h->table_offset, s, sizeof(uint64_t));
+
+    if (!is_xp3(h) || !is_supported(h)) {
+        free(h);
+        return NULL;
+    }
     return h;
 }
 
@@ -47,7 +58,7 @@ static bool is_xp3(struct xp3_header *h) {
 }
 
 
-/* Checks that the archive is of XP3 version 2. */
+/* Checks that the archive's version is supported. */
 static bool is_supported(struct xp3_header *h) {
     return h->version == 1;
 }

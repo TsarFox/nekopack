@@ -1,4 +1,4 @@
-/* test_header.h -- MinUnit test cases for header.c
+/* compress.h -- Wrappers for compression and decompression with zlib.
 
    Copyright (C) 2017 Jakob Tsar-Fox, All Rights Reserved.
 
@@ -19,4 +19,7 @@
 
 #pragma once
 
-char *test_header_read(void);
+#include "io.h"
+
+/* Decompresses `s` into a newly allocated stream structure. */
+struct stream *inflate_stream(struct stream *s, size_t inflated_len);

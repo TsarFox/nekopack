@@ -1,4 +1,4 @@
-/* test_header.c -- MinUnit test cases for header.c
+/* test_table.c -- MinUnit test cases for table.c
 
    Copyright (C) 2017 Jakob Tsar-Fox, All Rights Reserved.
 
@@ -18,30 +18,19 @@
    along with Nekopack. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <stdlib.h>
-#include <string.h>
 
 #include "minunit.h"
 
-#include "header.h"
-#include "io.h"
-
-extern int tests_run;
+#include "table.h"
 
 
-char *test_header_read(void) {
-    struct stream *s = stream_new(sizeof(struct xp3_header));
-
-    memset(s->_start, '\x00', sizeof(struct xp3_header));
-    struct xp3_header *h = read_header(s);
-    mu_assert("Header assertions failed", h == NULL);
-
-    stream_rewind(s);
-    memcpy(s->_start, "\x58\x50\x33\x0d\x0a\x20\x0a\x1a\x8b\x67\x01\x17\x00"
-           "\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x80\x00\x00\x00\x00\x00"
-           "\x00\x00\x00\xd1\xfe\x56\x0b\x00\x00\x00\x00", 42);
-    h = read_header(s);
-    mu_assert("Header read as invalid", h != NULL);
-
-    stream_free(s);
+char *test_table_list(void) {
+    struct table_entry *root = calloc(sizeof(struct table_entry), 1);
+    mu_assert("Structure not zeroed", root->next == NULL);
+    struct table_entry *next = calloc(sizeof(struct table_entry), 1);
+    next->key = 0xffffffff;
+    entry_append(root, next);
+    mu_assert("Entry not inserted", root->next->key == 0xffffffff);
+    entry_free(root);
     return NULL;
 }

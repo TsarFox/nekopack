@@ -62,10 +62,37 @@ void stream_write(struct stream *s, void *src, size_t n) {
         ptrdiff_t dist = (uintptr_t) s->_cur - (uintptr_t) s->_start;
         switch(s->_loc) {
             case HEAP:
-                s->_start = realloc(s->_start, s->len * 2);
+                s->len *= 2;
+                s->_start = realloc(s->_start, s->len);
                 s->_cur = s->_start + dist;
         }
     }
     memcpy(s->_cur, src, n);
     s->_cur += n;
+}
+
+
+/* Applies an initial and primary key to the given stream, effectively
+   encrypting or decrypting it. */
+void stream_xor(struct stream *s, uint8_t initial, uint8_t primary) {
+    *s->_start ^= initial;
+    for (char *p = s->_start; p < s->_start + s->len; *p++ ^= primary);
+}
+
+
+/* Obtains the current value of the stream's position indicator. */
+size_t stream_tell(struct stream *s) {
+    return s->_cur - s->_start;
+}
+
+
+/* Sets the stream's position indicator to the given `pos`. */
+void stream_seek(struct stream *s, size_t pos) {
+    s->_cur = s->_start + pos;
+}
+
+
+/* Sets the stream's position indicator to the beginning. */
+void stream_rewind(struct stream *s) {
+    s->_cur = s->_start;
 }

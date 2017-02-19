@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <stdbool.h>
+#include <stdint.h>
 #include <stddef.h>
 
 /* Internal enumerable type for representing the location of a memory
@@ -53,3 +53,16 @@ void stream_read(void *dest, struct stream *s, size_t n);
 /* Copies `n` bytes into the given stream from the memory area specified
    by `src`. The stream's cursor is advanced appropriately. */
 void stream_write(struct stream *s, void *src, size_t n);
+
+/* Applies an initial and primary key to the given stream, effectively
+   encrypting or decrypting it. */
+void stream_xor(struct stream *s, uint8_t initial, uint8_t primary);
+
+/* Obtains the current value of the stream's position indicator. */
+size_t stream_tell(struct stream *s);
+
+/* Sets the stream's position indicator to the given `pos`. */
+void stream_seek(struct stream *s, size_t pos);
+
+/* Sets the stream's position indicator to the beginning. */
+void stream_rewind(struct stream *s);
