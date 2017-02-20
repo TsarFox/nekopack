@@ -36,6 +36,7 @@ static char *run_all_tests(void) {
     mu_run_test(test_stream_nav);
     mu_run_test(test_header_read);
     mu_run_test(test_table_list);
+    mu_run_test(test_table_elif);
     return NULL;
 }
 

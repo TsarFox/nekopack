@@ -20,7 +20,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
+#include "encoding.h"
 #include "io.h"
 #include "table.h"
 
@@ -47,13 +49,58 @@ struct table_entry *parse_table(struct stream *s) {
             case ELIF_MAGIC:
             case HNFN_MAGIC:
             case NEKO_MAGIC:
-                break;
+                read_elif(s, root);
             case FILE_MAGIC:
                 break;
             default:
                 ended = 1;
         }
     } while (!ended);
+}
+
+
+/* Reads the contents of an eliF chunk. If there is an entry with a
+   matching key in the linked list specified by `root`, that structure
+   will be modified. Otherwise, a new entry will be created and appended
+   to the linked list. */
+void read_elif(struct stream *s, struct table_entry *root) {
+    char               *name, *buf;
+    uint16_t           name_size;
+    uint32_t           key;
+    struct table_entry *cur;
+
+    stream_read(&key, s, sizeof(uint32_t));
+    stream_read(&name_size, s, sizeof(uint16_t));
+
+    /* The value provided by the archive represents the number of
+       UTF-16LE characters, not the number of bytes in the string. */
+    name_size = name_size * 2 + 2;
+
+    for (cur = root; cur != NULL && cur->key != key; cur = cur->next);
+    if (cur == NULL) {
+        cur = calloc(sizeof(struct table_entry), 1);
+        if (cur == NULL) return;
+        entry_append(root, cur);
+    }
+
+    if (name_size < 0x100) {
+        buf = malloc(name_size);
+        name = malloc(name_size);
+        if (buf == NULL || name == NULL) return;
+
+        stream_read(buf, s, name_size);
+        utf16le_decode(buf, name, name_size);
+        free(buf);
+
+        name = realloc(name, strlen(name) + 1);
+        if (name == NULL) return;
+    } else {
+        /* strdup isn't defined in ISO/IEC 9899:1999 C. */
+        name = malloc(14);
+        if (name == NULL) return;
+        strncpy(name, "COPYRIGHT.txt", 14);
+    }
+    cur->filename = name;
 }
 
 

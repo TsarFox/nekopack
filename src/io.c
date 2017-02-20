@@ -18,6 +18,7 @@
    along with Nekopack. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -86,9 +87,21 @@ size_t stream_tell(struct stream *s) {
 }
 
 
-/* Sets the stream's position indicator to the given `pos`. */
-void stream_seek(struct stream *s, size_t pos) {
-    s->_cur = s->_start + pos;
+/* Sets the stream's position indicator to the given `pos`. If `whence`
+   is set to SEEK_SET, SEEK_CUR, or SEEK_END, the offset is relative to
+   the start of the file, the current position indicator, or
+   end-of-file, respectively. */
+void stream_seek(struct stream *s, size_t pos, int whence) {
+    switch (whence) {
+        case SEEK_SET:
+            s->_cur = s->_start + pos;
+            break;
+        case SEEK_CUR:
+            s->_cur += pos;
+            break;
+        case SEEK_END:
+            s->_cur = s->_start + s->len - pos;
+    }
 }
 
 

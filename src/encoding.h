@@ -1,4 +1,4 @@
-/* test_table.h -- MinUnit test cases for table.c
+/* encoding.h -- Code for working with encoded strings.
 
    Copyright (C) 2017 Jakob Tsar-Fox, All Rights Reserved.
 
@@ -19,5 +19,5 @@
 
 #pragma once
 
-char *test_table_list(void);
-char *test_table_elif(void);
+/* Decodes the UTF-16LE string specified by `in_buf` into `out_buf`. */
+void utf16le_decode(char *in_buf, char *out_buf, size_t len);

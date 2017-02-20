@@ -20,6 +20,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdio.h>
 #include <stddef.h>
 
 /* Internal enumerable type for representing the location of a memory
@@ -62,7 +63,7 @@ void stream_xor(struct stream *s, uint8_t initial, uint8_t primary);
 size_t stream_tell(struct stream *s);
 
 /* Sets the stream's position indicator to the given `pos`. */
-void stream_seek(struct stream *s, size_t pos);
+void stream_seek(struct stream *s, size_t pos, int whence);
 
 /* Sets the stream's position indicator to the beginning. */
 void stream_rewind(struct stream *s);

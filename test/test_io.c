@@ -80,8 +80,12 @@ char *test_stream_xor(void) {
 char *test_stream_nav(void) {
     struct stream *s = stream_new(2);
     mu_assert("Cursor not at beginning", stream_tell(s) == 0);
-    stream_seek(s, 2);
-    mu_assert("Cursor not advanced", stream_tell(s) == 2);
+    stream_seek(s, 2, SEEK_CUR);
+    mu_assert("Cursor not advanced (SEEK_CUR)", stream_tell(s) == 2);
+    stream_seek(s, 2, SEEK_SET);
+    mu_assert("Cursor not advanced (SEEK_SET)", stream_tell(s) == 2);
+    stream_seek(s, 0, SEEK_END);
+    mu_assert("Cursor not advanced (SEEK_END)", stream_tell(s) == 2);
     stream_rewind(s);
     mu_assert("Cursor not rewinded", stream_tell(s) == 0);
     stream_free(s);

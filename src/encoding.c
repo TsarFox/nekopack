@@ -1,4 +1,4 @@
-/* test_table.h -- MinUnit test cases for table.c
+/* encoding.c -- Code for working with encoded strings.
 
    Copyright (C) 2017 Jakob Tsar-Fox, All Rights Reserved.
 
@@ -17,7 +17,20 @@
    You should have received a copy of the GNU General Public License
    along with Nekopack. If not, see <http://www.gnu.org/licenses/>. */
 
-#pragma once
+#include <iconv.h>
 
-char *test_table_list(void);
-char *test_table_elif(void);
+
+/* Wrapper for iconv, using the conversion specified by `conv`. */
+static void convert(char *in_buf, char *out_buf, size_t len, iconv_t conv) {
+    size_t in_size = len, out_size = len;
+    char *in_start = in_buf, *out_start = out_buf;
+    iconv(conv, &in_start, &in_size, &out_start, &out_size);
+}
+
+
+/* Decodes the UTF-16LE string specified by `in_buf` into `out_buf`. */
+void utf16le_decode(char *in_buf, char *out_buf, size_t len) {
+    iconv_t conv = iconv_open("UTF-8", "UTF-16LE");
+    convert(in_buf, out_buf, len, conv);
+    iconv_close(conv);
+}
