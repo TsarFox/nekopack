@@ -24,15 +24,15 @@
 #include "header.h"
 #include "io.h"
 
-static bool is_xp3(struct xp3_header *h);
-static bool is_supported(struct xp3_header *h);
+static bool is_xp3(struct header *h);
+static bool is_supported(struct header *h);
 
 
-/* Reads from the given stream into a newly allocated xp3_header
-   structure. NULL is returned if the header contains an invalid magic
-   number, or if the archive's version is not supported. */
-struct xp3_header *read_header(struct stream *s) {
-    struct xp3_header *h = malloc(sizeof(struct xp3_header));
+/* Reads from the given stream into a newly allocated header structure.
+   NULL is returned if the header contains an invalid magic number, or
+   if the archive's version is not supported. */
+struct header *read_header(struct stream *s) {
+    struct header *h = malloc(sizeof(struct header));
     if (h == NULL) return NULL;
 
     /* The header structure can't be read into directly because of
@@ -40,8 +40,8 @@ struct xp3_header *read_header(struct stream *s) {
     stream_read(h->magic, s, 11);
     stream_read(&h->info_offset, s, sizeof(uint64_t));
     stream_read(&h->version, s, sizeof(uint32_t));
-    stream_read(&h->table_size, s, sizeof(uint64_t));
     stream_read(&h->flags, s, sizeof(uint8_t));
+    stream_read(&h->table_size, s, sizeof(uint64_t));
     stream_read(&h->table_offset, s, sizeof(uint64_t));
 
     if (!is_xp3(h) || !is_supported(h)) {
@@ -53,12 +53,13 @@ struct xp3_header *read_header(struct stream *s) {
 
 
 /* Checks that the header contains the correct magic number. */
-static bool is_xp3(struct xp3_header *h) {
+static bool is_xp3(struct header *h) {
     return !memcmp(h->magic, XP3_MAGIC, 11);
 }
 
 
-/* Checks that the archive's version is supported. */
-static bool is_supported(struct xp3_header *h) {
-    return h->version == 1;
+/* Checks that the archive's version is supported, and that it is marked
+   as compatible with the KiriKiriZ engine. */
+static bool is_supported(struct header *h) {
+    return h->version == 1 && h->flags & 0x80;
 }

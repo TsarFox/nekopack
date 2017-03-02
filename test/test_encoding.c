@@ -1,4 +1,4 @@
-/* test_io.h -- MinUnit test cases for io.c
+/* test_encoding.c -- MinUnit test cases for encoding.c
 
    Copyright (C) 2017 Jakob Tsar-Fox, All Rights Reserved.
 
@@ -17,11 +17,18 @@
    You should have received a copy of the GNU General Public License
    along with Nekopack. If not, see <http://www.gnu.org/licenses/>. */
 
-#pragma once
+#include <stdlib.h>
+#include <string.h>
 
-char *test_stream_obj(void);
-char *test_stream_rw(void);
-char *test_stream_dump(void);
-char *test_stream_realloc(void);
-char *test_stream_xor(void);
-char *test_stream_nav(void);
+#include "minunit.h"
+
+#include "encoding.h"
+
+
+char *test_decode_utf16le(void) {
+    char *in = "\x41\x00\x00\x00", *out = malloc(4);
+    utf16le_decode(in, out, 4);
+    mu_assert("UTF16-LE decoding failure", !strcmp(out, "A"));
+    free(out);
+    return NULL;
+}

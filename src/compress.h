@@ -21,5 +21,6 @@
 
 #include "io.h"
 
-/* Decompresses `s` into a newly allocated stream structure. */
-struct stream *inflate_stream(struct stream *s, size_t inflated_len);
+/* Inflates `s` into a newly allocated stream structure. */
+struct stream *stream_inflate(struct stream *s, size_t len,
+                              size_t decompressed_len);

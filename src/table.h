@@ -35,26 +35,34 @@ struct segment {
 
 /* Structure representing an entry in the archive's table section. */
 struct table_entry {
-    bool               encrypted; /* Whether or not it's encrypted. */
-    bool               compressed; /* Whether or not it's compressed. */
-    char               *filename; /* String containing file's name. */
     uint32_t           key; /* File-specific key for encryption. */
     uint64_t           ctime; /* Timestamp of creation time. */
     uint64_t           segment_count; /* Number of segments. */
     struct segment     **segments; /* Array of associated segments. */
+    char               *filename; /* String containing file's name. */
     struct table_entry *next; /* Pointer to the next entry. */
 };
 
 
 /* Returns the root of a linked list containing all of the files listed
    in the archive's table section. */
-struct table_entry *parse_table(struct stream *s);
+struct table_entry *read_table(struct stream *s);
 
 /* Reads the contents of an eliF chunk. If there is an entry with a
    matching key in the linked list specified by `root`, that structure
    will be modified. Otherwise, a new entry will be created and appended
    to the linked list. */
 void read_elif(struct stream *s, struct table_entry *root);
+
+/* Reads the contents of a File chunk. If there is an entry with a
+   matching key in the linked list specified by `root`, that structure
+   will be modified. Otherwise, a new entry will be created and appended
+   to the linked list. */
+void read_file(struct stream *s, struct table_entry *root);
+
+/* Traverses `root` for a node with the given key. If the linked list
+   lacks a node with the key, a new node is created and appended. */
+struct table_entry *get_node(struct table_entry *root, uint32_t key);
 
 /* Inserts `e` to the end of the linked list specified by `root`. */
 void entry_append(struct table_entry *root, struct table_entry *e);

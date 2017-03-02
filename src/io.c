@@ -37,6 +37,33 @@ struct stream *stream_new(size_t len) {
 }
 
 
+/* Copies `n` bytes from `s` into a new stream structure. */
+struct stream *stream_clone(struct stream *s, size_t n) {
+    struct stream *new = stream_new(n);
+    stream_write(new, s->_cur, n);
+    stream_rewind(new); /* New! This fixes the only bug we've had so far! */
+    /* Look for other shit like this! */
+    return new;
+}
+
+
+/* Maps the file at the given `path` into a stream structure. */
+struct stream *stream_from_file(char *path) {
+    FILE *fp = fopen(path, "rb");
+    if (fp == NULL) return NULL;
+    struct stream *new = malloc(sizeof(struct stream));
+    fseek(fp, 0, SEEK_END);
+    new->len = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
+    new->_start = malloc(new->len);
+    new->_cur = new->_start;
+    fread(new->_start, new->len, 1, fp);
+    new->_loc = HEAP;
+    fclose(fp);
+    return new;
+}
+
+
 /* Called to free or unmap the memory chunk associated with the given
    stream, as well as the stream structure itself. */
 void stream_free(struct stream *s) {
@@ -53,6 +80,12 @@ void stream_free(struct stream *s) {
 void stream_read(void *dest, struct stream *s, size_t n) {
     memcpy(dest, s->_cur, n);
     s->_cur += n;
+}
+
+
+/* Dumps the contents of `s` into the file specified by `fp`. */
+void stream_dump(FILE *fp, struct stream *s, size_t n) {
+    fwrite(s->_cur, n, 1, fp);
 }
 
 

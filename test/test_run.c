@@ -21,6 +21,7 @@
 
 #include "minunit.h"
 
+#include "test_encoding.h"
 #include "test_header.h"
 #include "test_io.h"
 #include "test_table.h"
@@ -29,14 +30,18 @@ int tests_run = 0;
 
 
 static char *run_all_tests(void) {
+    mu_run_test(test_out_path);
     mu_run_test(test_stream_obj);
     mu_run_test(test_stream_rw);
+    mu_run_test(test_stream_dump);
     mu_run_test(test_stream_realloc);
     mu_run_test(test_stream_xor);
     mu_run_test(test_stream_nav);
     mu_run_test(test_header_read);
     mu_run_test(test_table_list);
     mu_run_test(test_table_elif);
+    mu_run_test(test_table_file);
+    mu_run_test(test_decode_utf16le);
     return NULL;
 }
 

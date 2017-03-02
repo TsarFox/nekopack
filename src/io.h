@@ -43,6 +43,12 @@ struct stream {
    structure pointing to it. */
 struct stream *stream_new(size_t len);
 
+/* Copies `n` bytes from `s` into a new stream structure. */
+struct stream *stream_clone(struct stream *s, size_t n);
+
+/* Maps the file at the given `path` into a stream structure. */
+struct stream *stream_from_file(char *path);
+
 /* Called to free or unmap the memory chunk associated with the given
    stream, as well as the stream structure itself. */
 void stream_free(struct stream *s);
@@ -54,6 +60,9 @@ void stream_read(void *dest, struct stream *s, size_t n);
 /* Copies `n` bytes into the given stream from the memory area specified
    by `src`. The stream's cursor is advanced appropriately. */
 void stream_write(struct stream *s, void *src, size_t n);
+
+/* Dumps the contents of `s` into the file specified by `fp`. */
+void stream_dump(FILE *fp, struct stream *s, size_t n);
 
 /* Applies an initial and primary key to the given stream, effectively
    encrypting or decrypting it. */

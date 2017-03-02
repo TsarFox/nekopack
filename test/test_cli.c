@@ -1,4 +1,4 @@
-/* test_io.h -- MinUnit test cases for io.c
+/* test_cli.c -- MinUnit test cases for cli.c
 
    Copyright (C) 2017 Jakob Tsar-Fox, All Rights Reserved.
 
@@ -17,11 +17,16 @@
    You should have received a copy of the GNU General Public License
    along with Nekopack. If not, see <http://www.gnu.org/licenses/>. */
 
-#pragma once
+#include <string.h>
 
-char *test_stream_obj(void);
-char *test_stream_rw(void);
-char *test_stream_dump(void);
-char *test_stream_realloc(void);
-char *test_stream_xor(void);
-char *test_stream_nav(void);
+#include "minunit.h"
+
+#include "cli.h"
+
+
+char *test_out_path(void) {
+    char *argv[4] = {"nekopack", "-o", "/tmp", "a.xp3"};
+    struct params p = parse_args(3, argv);
+    mu_assert("Trailing slash not appended to path", !strcmp(p.out, "/tmp/"));
+    return NULL;
+}

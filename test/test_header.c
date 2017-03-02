@@ -30,8 +30,8 @@ extern int tests_run;
 
 char *test_header_read(void) {
     struct stream *s = stream_new(sizeof(struct xp3_header));
-
     memset(s->_start, '\x00', sizeof(struct xp3_header));
+
     struct xp3_header *h = read_header(s);
     mu_assert("Header assertions failed", h == NULL);
 
@@ -40,7 +40,7 @@ char *test_header_read(void) {
            "\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x80\x00\x00\x00\x00\x00"
            "\x00\x00\x00\xd1\xfe\x56\x0b\x00\x00\x00\x00", 42);
     h = read_header(s);
-    mu_assert("Header read as invalid", h != NULL);
+    mu_assert("Header parsing failure", h != NULL);
 
     stream_free(s);
     return NULL;

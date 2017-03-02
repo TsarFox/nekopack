@@ -1,4 +1,4 @@
-/* main.c -- Entry point to Nekopack.
+/* main.c -- Entry point to the program.
 
    Copyright (C) 2017 Jakob Tsar-Fox, All Rights Reserved.
 
@@ -16,3 +16,180 @@
 
    You should have received a copy of the GNU General Public License
    along with Nekopack. If not, see <http://www.gnu.org/licenses/>. */
+
+#include <sys/stat.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "cli.h"
+#include "compress.h"
+#include "crypto.h"
+#include "header.h"
+#include "io.h"
+#include "table.h"
+
+#define VERSION_STR "2.0.0b1"
+
+/* Pointer to a function to be mapped to entries in the table. */
+typedef void (*mapfn)(struct stream *archive, struct table_entry *e,
+                      struct params p);
+
+
+/* Writes usage information to stderr. */
+static void print_usage(char *prog_name) {
+    fprintf(stderr, "Usage: %s [OPTIONS] (ARCHIVES) [PATHS]\n", prog_name);
+}
+
+
+/* Writes versioning information to stdout. */
+static void print_version(void) {
+    printf("Nekopack version %s\nProgrammed by Jakob. "
+           "<http://jakob.space>\n", VERSION_STR);
+}
+
+
+/* Writes help information to stdout. */
+static void print_help(void) {
+    printf("A tool for decompressing the XP3 archives used by Nekopara.\n\n"
+           "   -h, --help\t\tDisplay this help page and exit.\n"
+           "   -v, --version\tDisplay the currently installed version and "
+           "exit.\n\n"
+           "   -e, --extract\tExtract the contents of the archive. This is "
+           "the default.\n"
+           "   -l, --list\t\tList the contents of the archive.\n\n"
+           "   -o, --output\t\tPath to extract files to.\n"
+           "   -g, --game\t\tGame the archive is from. Required for file "
+           "decryption\n"
+           "   -q, --quiet\t\tDon't display information about extracted "
+           "files.\n\n"
+           "Supported games: nekopara_volume_0, nekopara_volume_0_steam,\n"
+           "nekopara_volume_1, nekopara_volume_1_steam\n");
+}
+
+
+/* Inflates the table according to information in the header. */
+static struct stream *load_table(struct stream *s) {
+    uint8_t compressed;
+    uint64_t len, decompressed_len;
+    stream_read(&compressed, s, sizeof(uint8_t));
+    stream_read(&len, s, sizeof(uint64_t));
+    stream_read(&decompressed_len, s, sizeof(uint64_t));
+    if (compressed)
+        return stream_inflate(s, len, decompressed_len);
+    return stream_clone(s, len);
+}
+
+
+/* Creates any directories that do not already exist in `path`. */
+void make_dirs(char *path) {
+    struct stat tmp = {0};
+    char *buf = calloc(0x100, 1);
+    char *buf_start = buf;
+
+    for (int i = 0; i < 0x100 && path[i] != '\0'; i++) {
+        if (path[i] == '/') {
+            *buf++ = '/';
+            *buf = '\0';
+            if (stat(buf_start, &tmp) == -1)
+                mkdir(buf_start, 0777);
+        } else {
+            *buf++ = path[i];
+        }
+    }
+    free(buf_start);
+}
+
+
+/* Concatenates `name` and the output path specified in `p`. */
+static char *get_path(struct params p, char *name) {
+    size_t name_len = strlen(name);
+    char *path = malloc(p.out_len + name_len + 2);
+    strcpy(path, p.out);
+    strcpy(path + p.out_len + 1, name);
+    return path;
+}
+
+
+/* Basic mapfn for printing the filename of each entry. */
+static void list(struct stream *s, struct table_entry *e, struct params p) {
+    printf("%s\n", e->filename);
+}
+
+
+/* Mapfn for extracting the contents of the archive. */
+static void extract(struct stream *s, struct table_entry *e, struct params p) {
+    char *path = get_path(p, e->filename);
+    make_dirs(path);
+
+    FILE           *fp        = fopen(path, "wb+");
+    struct stream  *segm_data;
+    struct segment *segm;    
+
+    for (uint64_t i = 0; i < e->segment_count; i++) {
+        segm = e->segments[i];
+        stream_seek(s, segm->offset, SEEK_SET);
+        if (e->segments[i]->compressed) {
+            segm_data = stream_inflate(s, segm->compressed_size,
+                                       segm->decompressed_size);
+        } else {
+            segm_data = stream_clone(s, segm->compressed_size);
+        }
+
+        struct game_key k = get_key(NEKOPARA_VOLUME_1);
+        uint8_t initial = derive_initial(k, e->key);
+        uint8_t primary = derive_primary(k, e->key);
+        stream_xor(segm_data, initial, primary);
+            
+        stream_dump(fp, segm_data, segm_data->len);
+        stream_free(segm_data);
+    }
+
+    fclose(fp);
+    free(path);
+}
+
+
+/* Maps `fn` to every table entry found in the archive at `path`. */
+static void map_entries(char *path, struct params p, mapfn fn) {
+    struct stream *archive = stream_from_file(path);
+    struct header *h       = read_header(archive);
+    stream_seek(archive, h->table_offset, SEEK_SET);
+
+    struct stream *table     = load_table(archive);
+    struct table_entry *root = read_table(table);
+
+    for (struct table_entry *cur = root->next; cur != NULL; cur = cur->next)
+        fn(archive, cur, p);
+
+    entry_free(root);
+    stream_free(table);
+    free(h);
+    stream_free(archive);
+}
+
+
+int main(int argc, char **argv) {    
+    struct params p = parse_args(argc, argv);
+    switch (p.mode) {
+        case USAGE:
+            print_usage(argv[0]);
+            return 1;
+        case VERSION:
+            print_version();
+            break;
+        case HELP:
+            print_help();
+            break;
+        case LIST:
+            for (int i = p.vararg_index; i < argc; i++)
+                map_entries(argv[i], p, list);
+            break;
+        case EXTRACT:
+            for (int i = p.vararg_index; i < argc; i++)
+                map_entries(argv[i], p, extract);
+    }
+    params_free(p);
+    return 0;
+}

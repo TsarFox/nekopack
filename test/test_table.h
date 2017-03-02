@@ -21,3 +21,4 @@
 
 char *test_table_list(void);
 char *test_table_elif(void);
+char *test_table_file(void);

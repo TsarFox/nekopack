@@ -23,7 +23,8 @@
 
 
 /* Inflates `s` into a newly allocated stream structure. */
-struct stream *inflate_stream(struct stream *s, size_t inflated_len) {
+struct stream *stream_inflate(struct stream *s, size_t len,
+                              size_t decompressed_len) {
     z_stream strm;
     strm.zalloc = Z_NULL;
     strm.zfree = Z_NULL;
@@ -35,16 +36,16 @@ struct stream *inflate_stream(struct stream *s, size_t inflated_len) {
         return NULL;
 
     int ret;
-    struct stream *n = stream_new(inflated_len);
+    struct stream *n = stream_new(decompressed_len);
 
     do {
-        strm.avail_in = s->len;
+        strm.avail_in = len;
         strm.next_in = (Bytef *) s->_cur;
         do {
-            strm.avail_out = inflated_len;
+            strm.avail_out = decompressed_len;
             strm.next_out = (Bytef *) n->_cur;
             ret = inflate(&strm, Z_NO_FLUSH);
-            if (ret != Z_OK) {
+            if (ret == Z_STREAM_ERROR) {
                 stream_free(n);
                 inflateEnd(&strm);
                 return NULL;

@@ -1,4 +1,4 @@
-/* test_io.h -- MinUnit test cases for io.c
+/* test_encoding.h -- MinUnit test cases for encoding.c
 
    Copyright (C) 2017 Jakob Tsar-Fox, All Rights Reserved.
 
@@ -19,9 +19,4 @@
 
 #pragma once
 
-char *test_stream_obj(void);
-char *test_stream_rw(void);
-char *test_stream_dump(void);
-char *test_stream_realloc(void);
-char *test_stream_xor(void);
-char *test_stream_nav(void);
+char *test_decode_utf16le(void);
