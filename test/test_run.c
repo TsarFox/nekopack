@@ -21,6 +21,7 @@
 
 #include "minunit.h"
 
+#include "test_cli.h"
 #include "test_encoding.h"
 #include "test_header.h"
 #include "test_io.h"

@@ -10,7 +10,11 @@ Nekopack is free software, licensed under the [GNU General Public License.](http
 
 Compilation
 -----------
-Nekopack can be compiled by running `make` from the repository's root directory.
+Nekopack can be compiled on Linux by running `make` from the repository's root directory.
+
+*BSD users will have to install and run `gmake` to build Nekopack.
+
+The test suite can be run with `make test` or `gmake test`.
 
 
 TODO

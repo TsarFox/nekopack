@@ -1,24 +1,42 @@
+ifneq (,)
+Terribly sorry, this makefile requires gmake.
+endif
+
+CC := gcc
+LD := gcc
+
 CFLAGS = -Wall -Wextra -Os
 LDFLAGS = -lz
 
-OBJ = obj/cli.o obj/compress.o obj/crypto.o obj/encoding.o obj/header.o obj/io.o obj/table.o
-TEST_OBJ = obj/test_cli.o obj/test_encoding.o obj/test_header.o obj/test_io.o obj/test_table.o obj/test_run.o
-ENTRY_OBJ = obj/main.o
+SRCDIR = src
+TSTDIR = test
+OBJDIR = obj
+BINDIR = bin
+
+TESTS := $(wildcard $(TSTDIR)/*.c)
+TEST_OBJECTS := $(TESTS:$(TSTDIR)/%.c=$(OBJDIR)/%.o)
+SOURCES := $(filter-out $(SRCDIR)/main.c, $(wildcard $(SRCDIR)/*.c))
+OBJECTS := $(filter-out $(OBJDIR)/main.o, $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.o))
 
 
-all: bin/nekopack
+all: $(BINDIR)/nekopack
 
-bin/nekopack: $(OBJ) $(ENTRY_OBJ)
-	cc $(LDFLAGS) $(OBJ) $(ENTRY_OBJ) -o bin/nekopack
+$(BINDIR)/nekopack: $(OBJECTS) $(OBJDIR)/main.o
+	$(LD) $(LDFLAGS) $(OBJECTS) $(OBJDIR)/main.o -o bin/nekopack
+
+$(BINDIR)/test: $(OBJECTS) $(TEST_OBJECTS)
+	$(LD) $(LDFLAGS) $(OBJECTS) $(TEST_OBJECTS) -o $(BINDIR)/test
+
+$(OBJDIR)/%.o: src/%.c
+	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/$*.c
+
+$(OBJDIR)/%.o: test/%.c
+	$(CC) $(CFLAGS) -c -o $@ -I $(SRCDIR) $(TSTDIR)/$*.c
 
 test: bin/test
 	bin/test
 
-bin/test: $(OBJ) $(TEST_OBJ)
-	cc $(LDFLAGS) $(OBJ) $(TEST_OBJ) -o bin/test
+clean:
+	rm -f bin/* obj/*
 
-obj/%.o: src/%.c
-	cc $(CFLAGS) -c -o $@ src/$*.c
-
-obj/%.o: test/%.c
-	cc -I src $(CFLAGS) -c -o $@ test/$*.c
+.PHONY: clean test

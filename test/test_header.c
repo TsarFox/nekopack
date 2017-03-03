@@ -29,10 +29,10 @@ extern int tests_run;
 
 
 char *test_header_read(void) {
-    struct stream *s = stream_new(sizeof(struct xp3_header));
-    memset(s->_start, '\x00', sizeof(struct xp3_header));
+    struct stream *s = stream_new(sizeof(struct header));
+    memset(s->_start, '\x00', sizeof(struct header));
 
-    struct xp3_header *h = read_header(s);
+    struct header *h = read_header(s);
     mu_assert("Header assertions failed", h == NULL);
 
     stream_rewind(s);

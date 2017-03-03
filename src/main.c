@@ -30,7 +30,7 @@
 #include "io.h"
 #include "table.h"
 
-#define VERSION_STR "2.0.0b1"
+#define VERSION_STR "2.0.0a1"
 
 /* Pointer to a function to be mapped to entries in the table. */
 typedef void (*mapfn)(struct stream *archive, struct table_entry *e,
