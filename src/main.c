@@ -30,7 +30,10 @@
 #include "io.h"
 #include "table.h"
 
-#define VERSION_STR "2.0.0a1"
+#define EXIT_FAILURE 1
+#define EXIT_SUCCESS 0
+
+#define VERSION_STR "2.0.0a2"
 
 /* Pointer to a function to be mapped to entries in the table. */
 typedef void (*mapfn)(struct stream *archive, struct table_entry *e,
@@ -107,25 +110,47 @@ static char *get_path(struct params p, char *name) {
     size_t name_len = strlen(name);
     char *path = malloc(p.out_len + name_len + 2);
     strcpy(path, p.out);
-    strcpy(path + p.out_len + 1, name);
+    strcpy(path + p.out_len, name);
     return path;
 }
 
 
 /* Basic mapfn for printing the filename of each entry. */
 static void list(struct stream *s, struct table_entry *e, struct params p) {
+    if (e->filename == NULL) {
+        fprintf(stderr, "Found File entry without matching eliF. Archive may "
+                "be corrupted.\n");
+        return;
+    }
     printf("%s\n", e->filename);
 }
 
 
 /* Mapfn for extracting the contents of the archive. */
 static void extract(struct stream *s, struct table_entry *e, struct params p) {
+    if (e->filename == NULL) {
+        fprintf(stderr, "Found File entry without matching eliF. Archive may "
+                "be corrupted.\n");
+        return;
+    } else if (e->segments == NULL) {
+        fprintf(stderr, "Found eliF entry without matching File. Archive may "
+                "be corrupted.\n");
+        return;
+    }
+
     char *path = get_path(p, e->filename);
     make_dirs(path);
 
     FILE           *fp        = fopen(path, "wb+");
     struct stream  *segm_data;
-    struct segment *segm;    
+    struct segment *segm;
+
+    if (fp == NULL) {
+        perror(path);
+        exit(EXIT_FAILURE);
+    } else if (p.verbose) {
+        printf("Extracting %s to %s...\n", e->filename, path);
+    }
 
     for (uint64_t i = 0; i < e->segment_count; i++) {
         segm = e->segments[i];
@@ -137,11 +162,11 @@ static void extract(struct stream *s, struct table_entry *e, struct params p) {
             segm_data = stream_clone(s, segm->compressed_size);
         }
 
-        struct game_key k = get_key(NEKOPARA_VOLUME_1);
+        struct game_key k = get_key(p.game);
         uint8_t initial = derive_initial(k, e->key);
         uint8_t primary = derive_primary(k, e->key);
         stream_xor(segm_data, initial, primary);
-            
+
         stream_dump(fp, segm_data, segm_data->len);
         stream_free(segm_data);
     }
@@ -170,7 +195,7 @@ static void map_entries(char *path, struct params p, mapfn fn) {
 }
 
 
-int main(int argc, char **argv) {    
+int main(int argc, char **argv) {
     struct params p = parse_args(argc, argv);
     switch (p.mode) {
         case USAGE:
@@ -191,5 +216,5 @@ int main(int argc, char **argv) {
                 map_entries(argv[i], p, extract);
     }
     params_free(p);
-    return 0;
+    return EXIT_SUCCESS;
 }

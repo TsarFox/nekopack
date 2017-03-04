@@ -39,8 +39,8 @@ struct params parse_args(int argc, char **argv) {
     int cur = 0, opt_index = 0, count = 0;
     static struct option long_opts[] = {
         {"help", no_argument, NULL, 'h'},
-        {"version", no_argument, NULL, 'v'},
-        {"quiet", no_argument, NULL, 'q'},
+        {"version", no_argument, NULL, 'V'},
+        {"verbose", no_argument, NULL, 'v'},
         {"extract", no_argument, NULL, 'e'},
         {"list", no_argument, NULL, 'l'},
         {"output", no_argument, NULL, 'o'},
@@ -50,24 +50,26 @@ struct params parse_args(int argc, char **argv) {
 
     do {
         count++;
-        cur = getopt_long(argc, argv, "hvelqo:", long_opts, &opt_index);
+        cur = getopt_long(argc, argv, "hVvelqo:g:", long_opts, &opt_index);
         switch (cur) {
             case 'h':
                 p.mode = HELP;
                 return p;
-            case 'v':
+            case 'V':
                 p.mode = VERSION;
                 return p;
-            case 'q':
-                p.quiet = true;
+            case 'v':
+                p.verbose = true;
                 break;
             case 'o':
                 count++;
                 p.out_len = strlen(optarg);
                 p.out = malloc(p.out_len + 2);
                 strcpy(p.out, optarg);
-                if (p.out[p.out_len - 1] != '/')
+                if (p.out[p.out_len - 1] != '/') {
                     p.out[p.out_len] = '/';
+                    p.out_len += 1;
+                }
                 break;
             case 'g':
                 count++;

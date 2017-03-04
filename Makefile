@@ -5,7 +5,7 @@ endif
 CC := gcc
 LD := gcc
 
-CFLAGS = -Wall -Wextra -Os
+CFLAGS = -Wall -Wextra -Os -g
 LDFLAGS = -lz
 
 SRCDIR = src
@@ -22,23 +22,23 @@ OBJECTS := $(filter-out $(OBJDIR)/main.o, $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 all: $(BINDIR)/nekopack
 
 $(BINDIR)/nekopack: $(OBJECTS) $(OBJDIR)/main.o
-	mkdir -p $(BINDIR)
+	@mkdir -p $(BINDIR)
 	$(LD) $(LDFLAGS) $(OBJECTS) $(OBJDIR)/main.o -o bin/nekopack
 
 $(BINDIR)/test: $(OBJECTS) $(TEST_OBJECTS)
-	mkdir -p $(BINDIR)
+	@mkdir -p $(BINDIR)
 	$(LD) $(LDFLAGS) $(OBJECTS) $(TEST_OBJECTS) -o $(BINDIR)/test
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
-	mkdir -p $(OBJDIR)
+	@mkdir -p $(OBJDIR)
 	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/$*.c
 
 $(OBJDIR)/%.o: $(TSTDIR)/%.c
-	mkdir -p $(OBJDIR)
+	@mkdir -p $(OBJDIR)
 	$(CC) $(CFLAGS) -c -o $@ -I $(SRCDIR) $(TSTDIR)/$*.c
 
 test: bin/test
-	bin/test
+	@bin/test
 
 clean:
 	rm -f bin/* obj/*

@@ -35,7 +35,7 @@ enum {
 struct params {
     int    mode; /* Current mode of operation. */
     int    game; /* Which encryption keys to use. */
-    bool   quiet; /* Whether or not to suppress progress messages. */
+    bool   verbose; /* Whether or not to output progress messages. */
     int    vararg_index; /* Start index of paths in argv. */
     char   *out; /* Path to extract files to. */
     size_t out_len; /* Length of the output path string. */
