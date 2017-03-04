@@ -22,6 +22,7 @@
 #include "minunit.h"
 
 #include "test_cli.h"
+#include "test_crypto.h"
 #include "test_encoding.h"
 #include "test_header.h"
 #include "test_io.h"
@@ -32,6 +33,8 @@ int tests_run = 0;
 
 static char *run_all_tests(void) {
     mu_run_test(test_out_path);
+    mu_run_test(test_derive_initial);
+    mu_run_test(test_derive_primary);
     mu_run_test(test_stream_obj);
     mu_run_test(test_stream_rw);
     mu_run_test(test_stream_dump);

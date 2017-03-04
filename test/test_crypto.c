@@ -1,4 +1,4 @@
-/* test_encoding.c -- MinUnit test cases for encoding.c
+/* test_crypto.c -- MinUnit test cases for crypto.c
 
    Copyright (C) 2017 Jakob Tsar-Fox, All Rights Reserved.
 
@@ -17,18 +17,25 @@
    You should have received a copy of the GNU General Public License
    along with Nekopack. If not, see <http://www.gnu.org/licenses/>. */
 
-#include <stdlib.h>
-#include <string.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #include "minunit.h"
 
-#include "encoding.h"
+#include "crypto.h"
+
+extern int tests_run;
 
 
-char *test_decode_utf16le(void) {
-    char *in = "\x41\x00\x42\x00\x43\x00\x00\x00", *out = malloc(8);
-    utf16le_decode(in, out, 8);
-    mu_assert("UTF16-LE decoding failure", !strcmp(out, "ABC"));
-    free(out);
+char *test_derive_initial(void) {
+    struct game_key k = get_key(NEKOPARA_VOLUME_0);
+    mu_assert("Initial key failure", derive_initial(k, 0xdeadbeefcafebabe) == 0x22);
+    return NULL;
+}
+
+
+char *test_derive_primary(void) {
+    struct game_key k = get_key(NEKOPARA_VOLUME_1);
+    mu_assert("Initial key failure", derive_primary(k, 0xdeadbeefcafebabe) == 0x13);
     return NULL;
 }
