@@ -60,7 +60,7 @@ static void print_help(void) {
            "   -v, --version\tDisplay the currently installed version and "
            "exit.\n\n"
            "   -e, --extract\tExtract the contents of the archive. This is "
-           "the default.\n"
+           "the default\n\t\t\taction if no mode argument is provided.\n"
            "   -l, --list\t\tList the contents of the archive.\n\n"
            "   -o, --output\t\tPath to extract files to.\n"
            "   -g, --game\t\tGame the archive is from. Required for file "

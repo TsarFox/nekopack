@@ -5,8 +5,15 @@ endif
 CC := gcc
 LD := gcc
 
-CFLAGS = -Wall -Wextra -Os -g
+CFLAGS = -Wall -Wextra -Os -g -std=c99 -pedantic
+ifeq ($(shell uname -s),OpenBSD)
+CFLAGS += -I/usr/local/include
+endif
+
 LDFLAGS = -lz
+ifeq ($(shell uname -s),OpenBSD)
+LDFLAGS += -liconv -L/usr/local/lib
+endif
 
 SRCDIR = src
 TSTDIR = test
