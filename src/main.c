@@ -1,6 +1,6 @@
 /* main.c -- Entry point to the program.
 
-   Copyright (C) 2017 Jakob Tsar-Fox, All Rights Reserved.
+   Copyright (C) 2017 Jakob Kreuze, All Rights Reserved.
 
    This file is part of Nekopack.
 
@@ -34,6 +34,7 @@
 #define EXIT_SUCCESS 0
 
 #define VERSION_STR "2.0.0a2"
+
 
 /* Pointer to a function to be mapped to entries in the table. */
 typedef void (*mapfn)(struct stream *archive, struct table_entry *e,

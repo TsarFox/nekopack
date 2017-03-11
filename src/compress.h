@@ -1,6 +1,6 @@
 /* compress.h -- Wrappers for compression and decompression with zlib.
 
-   Copyright (C) 2017 Jakob Tsar-Fox, All Rights Reserved.
+   Copyright (C) 2017 Jakob Kreuze, All Rights Reserved.
 
    This file is part of Nekopack.
 

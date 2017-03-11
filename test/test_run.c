@@ -1,6 +1,6 @@
 /* test_io.c -- MinUnit test runner.
 
-   Copyright (C) 2017 Jakob Tsar-Fox, All Rights Reserved.
+   Copyright (C) 2017 Jakob Kreuze, All Rights Reserved.
 
    This file is part of Nekopack.
 
