@@ -1,4 +1,4 @@
-/* main.c -- Entry point to the program.
+/* main.c -- Command-line entry point to the Nekopack.
 
    Copyright (C) 2017 Jakob Kreuze, All Rights Reserved.
 
@@ -33,12 +33,7 @@
 #define EXIT_FAILURE 1
 #define EXIT_SUCCESS 0
 
-#define VERSION_STR "2.0.0a2"
-
-
-/* Pointer to a function to be mapped to entries in the table. */
-typedef void (*mapfn)(struct stream *archive, struct table_entry *e,
-                      struct params p);
+#define VERSION_STR "2.0.0"
 
 
 /* Writes usage information to stderr. */
@@ -65,7 +60,7 @@ static void print_help(void) {
            "   -l, --list\t\tList the contents of the archive.\n\n"
            "   -o, --output\t\tPath to extract files to.\n"
            "   -g, --game\t\tGame the archive is from. Required for file "
-           "decryption\n"
+           "decryption.\n"
            "   -q, --quiet\t\tDon't display information about extracted "
            "files.\n\n"
            "Supported games: nekopara_volume_0, nekopara_volume_0_steam,\n"
@@ -88,10 +83,9 @@ static struct stream *load_table(struct stream *s) {
 
 /* Creates any directories that do not already exist in `path`. */
 void make_dirs(char *path) {
-    struct stat tmp = {0};
-    char *buf = calloc(0x100, 1);
+    char *buf       = calloc(0x100, 1);
     char *buf_start = buf;
-
+    struct stat tmp = {0};
     for (int i = 0; i < 0x100 && path[i] != '\0'; i++) {
         if (path[i] == '/') {
             *buf++ = '/';
@@ -116,26 +110,20 @@ static char *get_path(struct params p, char *name) {
 }
 
 
-/* Basic mapfn for printing the filename of each entry. */
-static void list(struct stream *s, struct table_entry *e, struct params p) {
-    if (e->filename == NULL) {
-        fprintf(stderr, "Found File entry without matching eliF. Archive may "
-                "be corrupted.\n");
+/* Prints the filename of the entry specified by `e` to stdout. */
+static void list(struct table_entry *e) {
+    if (e->filename == NULL || e->segments == NULL) {
+        fprintf(stderr, "Inconsistency detected. Archive may be corrupted.\n");
         return;
     }
     printf("%s\n", e->filename);
 }
 
 
-/* Mapfn for extracting the contents of the archive. */
+/* Extracts the archive entry specified by `e` to disk. */
 static void extract(struct stream *s, struct table_entry *e, struct params p) {
-    if (e->filename == NULL) {
-        fprintf(stderr, "Found File entry without matching eliF. Archive may "
-                "be corrupted.\n");
-        return;
-    } else if (e->segments == NULL) {
-        fprintf(stderr, "Found eliF entry without matching File. Archive may "
-                "be corrupted.\n");
+    if (e->filename == NULL || e->segments == NULL) {
+        fprintf(stderr, "Inconsistency detected. Archive may be corrupted.\n");
         return;
     }
 
@@ -177,17 +165,30 @@ static void extract(struct stream *s, struct table_entry *e, struct params p) {
 }
 
 
-/* Maps `fn` to every table entry found in the archive at `path`. */
-static void map_entries(char *path, struct params p, mapfn fn) {
+/* Loads an XP3 archive and maps the function associated to the current
+   mode of operation to every entry. */
+static void map_entries(char *path, struct params p) {
     struct stream *archive = stream_from_file(path);
-    struct header *h       = read_header(archive);
+    if (archive == NULL) {
+        perror(path);
+        return;
+    }
+
+    struct header *h = read_header(archive);
     stream_seek(archive, h->table_offset, SEEK_SET);
 
     struct stream *table     = load_table(archive);
     struct table_entry *root = read_table(table);
 
-    for (struct table_entry *cur = root->next; cur != NULL; cur = cur->next)
-        fn(archive, cur, p);
+    for (struct table_entry *cur = root->next; cur != NULL; cur = cur->next) {
+        switch (p.mode) {
+            case LIST:
+                list(cur);
+                break;
+            case EXTRACT:
+                extract(archive, cur, p);
+        }
+    }
 
     entry_free(root);
     stream_free(table);
@@ -201,7 +202,8 @@ int main(int argc, char **argv) {
     switch (p.mode) {
         case USAGE:
             print_usage(argv[0]);
-            return 1;
+            params_free(p);
+            return EXIT_FAILURE;
         case VERSION:
             print_version();
             break;
@@ -209,12 +211,9 @@ int main(int argc, char **argv) {
             print_help();
             break;
         case LIST:
-            for (int i = p.vararg_index; i < argc; i++)
-                map_entries(argv[i], p, list);
-            break;
         case EXTRACT:
             for (int i = p.vararg_index; i < argc; i++)
-                map_entries(argv[i], p, extract);
+                map_entries(argv[i], p);
     }
     params_free(p);
     return EXIT_SUCCESS;

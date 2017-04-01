@@ -33,12 +33,12 @@ enum {
 
 /* Structure for storing options set from the command-line. */
 struct params {
-    int    mode; /* Current mode of operation. */
-    int    game; /* Which encryption keys to use. */
-    bool   verbose; /* Whether or not to output progress messages. */
+    int    mode;         /* Current mode of operation. */
+    int    game;         /* Which encryption keys to use. */
+    bool   verbose;      /* Whether or not to output progress messages. */
     int    vararg_index; /* Start index of paths in argv. */
-    char   *out; /* Path to extract files to. */
-    size_t out_len; /* Length of the output path string. */
+    char   *out;         /* Path to extract files to. */
+    size_t out_len;      /* Length of the output path string. */
 };
 
 /* Returns a params structure parsed from `argv`. */

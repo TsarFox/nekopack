@@ -23,19 +23,46 @@
 #include <getopt.h>
 
 #include "cli.h"
-#include "crypto.h" /* New, maybe clean up the section on game crypto? */
+#include "crypto.h"
+
+
+/* Copies `optarg` into the out field of `p` and ensures that it ends in
+   a trailing path delimiter. */
+static void parse_output_path(const char *optarg, struct params *p) {
+    p->out_len = strlen(optarg);
+    p->out = malloc(p->out_len + 2);
+    strcpy(p->out, optarg);
+    if (p->out[p->out_len - 1] != '/') {
+        p->out[p->out_len] = '/';
+        p->out_len += 1;
+    }
+}
+
+
+/* Updates the game field of `p` to properly reflect the game ID
+   specified by the string, `optarg`. */
+static void parse_game_id(const char *optarg, struct params *p) {
+    if (!strcmp(optarg, "nekopara_volume_0"))
+        p->game = NEKOPARA_VOLUME_0;
+    else if (!strcmp(optarg, "nekopara_volume_0_steam"))
+        p->game = NEKOPARA_VOLUME_0_STEAM;
+    else if (!strcmp(optarg, "nekopara_volume_1"))
+        p->game = NEKOPARA_VOLUME_1;
+    else if (!strcmp(optarg, "nekopara_volume_1_steam"))
+        p->game = NEKOPARA_VOLUME_1_STEAM;
+}
 
 
 /* Returns a params structure parsed from `argv`. */
 struct params parse_args(int argc, char **argv) {
     struct params p = {0};
-    
+
     if (argc < 2) {
         p.mode = USAGE;
         return p;
     }
     p.mode = EXTRACT;
-    
+
     int cur = 0, opt_index = 0, count = 0;
     static struct option long_opts[] = {
         {"help", no_argument, NULL, 'h'},
@@ -63,24 +90,11 @@ struct params parse_args(int argc, char **argv) {
                 break;
             case 'o':
                 count++;
-                p.out_len = strlen(optarg);
-                p.out = malloc(p.out_len + 2);
-                strcpy(p.out, optarg);
-                if (p.out[p.out_len - 1] != '/') {
-                    p.out[p.out_len] = '/';
-                    p.out_len += 1;
-                }
+                parse_output_path(optarg, &p);
                 break;
             case 'g':
                 count++;
-                if (!strcmp(optarg, "nekopara_volume_0"))
-                    p.game = NEKOPARA_VOLUME_0;
-                else if (!strcmp(optarg, "nekopara_volume_0_steam"))
-                    p.game = NEKOPARA_VOLUME_0_STEAM;
-                else if (!strcmp(optarg, "nekopara_volume_1"))
-                    p.game = NEKOPARA_VOLUME_1;
-                else if (!strcmp(optarg, "nekopara_volume_1_steam"))
-                    p.game = NEKOPARA_VOLUME_1_STEAM;
+                parse_game_id(optarg, &p);
             case 'e':
                 p.mode = EXTRACT;
                 break;

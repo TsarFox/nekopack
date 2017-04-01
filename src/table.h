@@ -27,20 +27,20 @@
 
 /* Structure representing one segment associated with a File entry. */
 struct segment {
-    bool     compressed; /* Whether or not the segment is compressed. */
-    uint64_t offset; /* Offset to the segment's beginning. */
-    uint64_t compressed_size; /* Size of compressed segment. */
+    bool     compressed;        /* Whether or not the segment is compressed. */
+    uint64_t offset;            /* Offset to the segment's beginning. */
+    uint64_t compressed_size;   /* Size of compressed segment. */
     uint64_t decompressed_size; /* Size of decompressed segment. */
 };
 
 /* Structure representing an entry in the archive's table section. */
 struct table_entry {
-    uint32_t           key; /* File-specific key for encryption. */
-    uint64_t           ctime; /* Timestamp of creation time. */
+    uint32_t           key;           /* File-specific key for encryption. */
+    uint64_t           ctime;         /* Timestamp of creation time. */
     uint64_t           segment_count; /* Number of segments. */
-    struct segment     **segments; /* Array of associated segments. */
-    char               *filename; /* String containing file's name. */
-    struct table_entry *next; /* Pointer to the next entry. */
+    char               *filename;     /* String containing file's name. */
+    struct segment     **segments;    /* Array of associated segments. */
+    struct table_entry *next;         /* Pointer to the next entry. */
 };
 
 

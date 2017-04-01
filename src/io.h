@@ -33,10 +33,10 @@ enum _location {
    position. The structure additionally maintains a `length` variable
    containing the stream's length. */
 struct stream {
-    size_t         len; /* Length of the stream. */
+    size_t         len;     /* Length of the stream. */
     char           *_start; /* Pointer to the stream's start. */
-    char           *_cur; /* Pointer to the current position. */
-    enum _location _loc; /* Location of the stream in memory. */
+    char           *_cur;   /* Pointer to the current position. */
+    enum _location _loc;    /* Location of the stream in memory. */
 };
 
 /* Allocates `len` bytes of non-zeroed memory and returns a new stream
