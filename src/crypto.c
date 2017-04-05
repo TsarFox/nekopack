@@ -67,7 +67,7 @@ uint8_t derive_initial(struct game_key k, uint64_t file_key) {
 
 /* Generates a primary key for the given key structure and file key. */
 uint8_t derive_primary(struct game_key k, uint64_t file_key) {
-    uint32_t tmp = k.master ^ file_key;
-    uint8_t primary = (tmp >> 24 ^ tmp >> 16 ^ tmp >> 8 ^ tmp) & 0xff;
+    uint32_t tmp     = k.master ^ file_key;
+    uint8_t  primary = (tmp >> 24 ^ tmp >> 16 ^ tmp >> 8 ^ tmp) & 0xff;
     return primary == 0 ? k.fallback_primary : primary;
 }

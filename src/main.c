@@ -89,7 +89,7 @@ void make_dirs(char *path) {
     for (int i = 0; i < 0x100 && path[i] != '\0'; i++) {
         if (path[i] == '/') {
             *buf++ = '/';
-            *buf = '\0';
+            *buf   = '\0';
             if (stat(buf_start, &tmp) == -1)
                 mkdir(buf_start, 0777);
         } else {
@@ -152,8 +152,8 @@ static void extract(struct stream *s, struct table_entry *e, struct params p) {
         }
 
         struct game_key k = get_key(p.game);
-        uint8_t initial = derive_initial(k, e->key);
-        uint8_t primary = derive_primary(k, e->key);
+        uint8_t initial   = derive_initial(k, e->key);
+        uint8_t primary   = derive_primary(k, e->key);
         stream_xor(segm_data, initial, primary);
 
         stream_dump(fp, segm_data, segm_data->len);

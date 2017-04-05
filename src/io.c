@@ -29,10 +29,10 @@
    structure pointing to it. */
 struct stream *stream_new(size_t len) {
     struct stream *new = malloc(sizeof(struct stream));
-    new->len = len;
+    new->len    = len;
     new->_start = malloc(len);
-    new->_cur = new->_start;
-    new->_loc = HEAP;
+    new->_cur   = new->_start;
+    new->_loc   = HEAP;
     return new;
 }
 
@@ -41,8 +41,7 @@ struct stream *stream_new(size_t len) {
 struct stream *stream_clone(struct stream *s, size_t n) {
     struct stream *new = stream_new(n);
     stream_write(new, s->_cur, n);
-    stream_rewind(new); /* New! This fixes the only bug we've had so far! */
-    /* Look for other shit like this! */
+    stream_rewind(new);
     return new;
 }
 
@@ -96,9 +95,9 @@ void stream_write(struct stream *s, void *src, size_t n) {
         ptrdiff_t dist = (uintptr_t) s->_cur - (uintptr_t) s->_start;
         switch(s->_loc) {
             case HEAP:
-                s->len *= 2;
+                s->len   *= 2;
                 s->_start = realloc(s->_start, s->len);
-                s->_cur = s->_start + dist;
+                s->_cur   = s->_start + dist;
         }
     }
     memcpy(s->_cur, src, n);

@@ -30,11 +30,11 @@
    a trailing path delimiter. */
 static void parse_output_path(const char *optarg, struct params *p) {
     p->out_len = strlen(optarg);
-    p->out = malloc(p->out_len + 2);
+    p->out     = malloc(p->out_len + 2);
     strcpy(p->out, optarg);
     if (p->out[p->out_len - 1] != '/') {
         p->out[p->out_len] = '/';
-        p->out_len += 1;
+        p->out_len        += 1;
     }
 }
 

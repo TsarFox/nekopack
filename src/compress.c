@@ -26,11 +26,11 @@
 struct stream *stream_inflate(struct stream *s, size_t len,
                               size_t decompressed_len) {
     z_stream strm;
-    strm.zalloc = Z_NULL;
-    strm.zfree = Z_NULL;
-    strm.opaque = Z_NULL;
+    strm.zalloc   = Z_NULL;
+    strm.zfree    = Z_NULL;
+    strm.opaque   = Z_NULL;
     strm.avail_in = 0;
-    strm.next_in = Z_NULL;
+    strm.next_in  = Z_NULL;
 
     if (inflateInit(&strm) != Z_OK)
         return NULL;
