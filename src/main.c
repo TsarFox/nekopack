@@ -177,16 +177,16 @@ static void map_entries(char *path, struct params p) {
     struct header *h = read_header(archive);
     stream_seek(archive, h->table_offset, SEEK_SET);
 
-    struct stream *table     = load_table(archive);
-    struct table_entry *root = read_table(table);
+    struct stream      *table = load_table(archive);
+    struct table_entry *root  = read_table(table);
 
     for (struct table_entry *cur = root->next; cur != NULL; cur = cur->next) {
         switch (p.mode) {
-            case LIST:
-                list(cur);
-                break;
-            case EXTRACT:
-                extract(archive, cur, p);
+        case LIST:
+            list(cur);
+            break;
+        case EXTRACT:
+            extract(archive, cur, p);
         }
     }
 
@@ -200,20 +200,20 @@ static void map_entries(char *path, struct params p) {
 int main(int argc, char **argv) {
     struct params p = parse_args(argc, argv);
     switch (p.mode) {
-        case USAGE:
-            print_usage(argv[0]);
-            params_free(p);
-            return EXIT_FAILURE;
-        case VERSION:
-            print_version();
-            break;
-        case HELP:
-            print_help();
-            break;
-        case LIST:
-        case EXTRACT:
-            for (int i = p.vararg_index; i < argc; i++)
-                map_entries(argv[i], p);
+    case USAGE:
+        print_usage(argv[0]);
+        params_free(p);
+        return EXIT_FAILURE;
+    case VERSION:
+        print_version();
+        break;
+    case HELP:
+        print_help();
+        break;
+    case LIST:
+    case EXTRACT:
+        for (int i = p.vararg_index; i < argc; i++)
+            map_entries(argv[i], p);
     }
     params_free(p);
     return EXIT_SUCCESS;

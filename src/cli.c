@@ -79,27 +79,27 @@ struct params parse_args(int argc, char **argv) {
         count++;
         cur = getopt_long(argc, argv, "hVvelqo:g:", long_opts, &opt_index);
         switch (cur) {
-            case 'h':
-                p.mode = HELP;
-                return p;
-            case 'V':
-                p.mode = VERSION;
-                return p;
-            case 'v':
-                p.verbose = true;
-                break;
-            case 'o':
-                count++;
-                parse_output_path(optarg, &p);
-                break;
-            case 'g':
-                count++;
-                parse_game_id(optarg, &p);
-            case 'e':
-                p.mode = EXTRACT;
-                break;
-            case 'l':
-                p.mode = LIST;
+        case 'h':
+            p.mode = HELP;
+            return p;
+        case 'V':
+            p.mode = VERSION;
+            return p;
+        case 'v':
+            p.verbose = true;
+            break;
+        case 'o':
+            count++;
+            parse_output_path(optarg, &p);
+            break;
+        case 'g':
+            count++;
+            parse_game_id(optarg, &p);
+        case 'e':
+            p.mode = EXTRACT;
+            break;
+        case 'l':
+            p.mode = LIST;
         }
     } while (cur >= 0);
 

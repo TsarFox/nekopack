@@ -28,30 +28,30 @@
 struct game_key get_key(int game) {
     struct game_key k = {0};
     switch (game) {
-        case NEKOPARA_VOLUME_0:
-            k.master = 0x1548e29c;
-            k.fallback_initial = 0x9c;
-            k.fallback_primary = 0xd7;
-            k.uses_initial = true;
-            break;
-        case NEKOPARA_VOLUME_0_STEAM:
-            k.master = 0x44528b87;
-            k.fallback_initial = 0x87;
-            k.fallback_primary = 0x23;
-            k.uses_initial = true;
-            break;
-        case NEKOPARA_VOLUME_1:
-            k.master = 0x1548e29c;
-            k.fallback_initial = 0x00;
-            k.fallback_primary = 0xd7;
-            k.uses_initial = false;
-            break;
-        case NEKOPARA_VOLUME_1_STEAM:
-            k.master = 0x44528b87;
-            k.fallback_initial = 0x00;
-            k.fallback_primary = 0x23;
-            k.uses_initial = false;
-            break;
+    case NEKOPARA_VOLUME_0:
+        k.master           = 0x1548e29c;
+        k.fallback_initial = 0x9c;
+        k.fallback_primary = 0xd7;
+        k.uses_initial     = true;
+        break;
+    case NEKOPARA_VOLUME_0_STEAM:
+        k.master           = 0x44528b87;
+        k.fallback_initial = 0x87;
+        k.fallback_primary = 0x23;
+        k.uses_initial     = true;
+        break;
+    case NEKOPARA_VOLUME_1:
+        k.master           = 0x1548e29c;
+        k.fallback_initial = 0x00;
+        k.fallback_primary = 0xd7;
+        k.uses_initial     = false;
+        break;
+    case NEKOPARA_VOLUME_1_STEAM:
+        k.master           = 0x44528b87;
+        k.fallback_initial = 0x00;
+        k.fallback_primary = 0x23;
+        k.uses_initial     = false;
+        break;
     }
     return k;
 }

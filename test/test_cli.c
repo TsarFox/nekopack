@@ -26,7 +26,7 @@
 
 char *test_out_path(void) {
     char *argv[4] = {"nekopack", "-o", "/tmp", "a.xp3"};
-    struct params p = parse_args(3, argv);
+    struct params p = parse_args(4, argv);
     mu_assert("Trailing slash not appended to path", !strcmp(p.out, "/tmp/"));
     return NULL;
 }

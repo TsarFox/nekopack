@@ -22,7 +22,7 @@
 
 /* Wrapper for iconv, using the conversion specified by `conv`. */
 static void convert(char *in_buf, char *out_buf, size_t len, iconv_t conv) {
-    size_t in_size   = len,    out_size   = len;
+    size_t  in_size  = len,     out_size   = len;
     char   *in_start = in_buf, *out_start = out_buf;
     iconv(conv, &in_start, &in_size, &out_start, &out_size);
 }

@@ -50,4 +50,7 @@ test: bin/test
 clean:
 	rm -f bin/* obj/*
 
-.PHONY: clean test
+style:
+	astyle -n --recursive "src/*.c" "src/*.h" "test/*.c" "test/*.h"
+
+.PHONY: clean test style

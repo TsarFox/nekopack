@@ -67,8 +67,8 @@ struct stream *stream_from_file(char *path) {
    stream, as well as the stream structure itself. */
 void stream_free(struct stream *s) {
     switch (s->_loc) {
-        case HEAP:
-            free(s->_start);
+    case HEAP:
+        free(s->_start);
     }
     free(s);
 }
@@ -94,10 +94,10 @@ void stream_write(struct stream *s, void *src, size_t n) {
     if (s->_cur + n > s->_start + s->len) {
         ptrdiff_t dist = (uintptr_t) s->_cur - (uintptr_t) s->_start;
         switch(s->_loc) {
-            case HEAP:
-                s->len   *= 2;
-                s->_start = realloc(s->_start, s->len);
-                s->_cur   = s->_start + dist;
+        case HEAP:
+            s->len   *= 2;
+            s->_start = realloc(s->_start, s->len);
+            s->_cur   = s->_start + dist;
         }
     }
     memcpy(s->_cur, src, n);
@@ -125,14 +125,14 @@ size_t stream_tell(struct stream *s) {
    end-of-file, respectively. */
 void stream_seek(struct stream *s, size_t pos, int whence) {
     switch (whence) {
-        case SEEK_SET:
-            s->_cur = s->_start + pos;
-            break;
-        case SEEK_CUR:
-            s->_cur += pos;
-            break;
-        case SEEK_END:
-            s->_cur = s->_start + s->len - pos;
+    case SEEK_SET:
+        s->_cur = s->_start + pos;
+        break;
+    case SEEK_CUR:
+        s->_cur += pos;
+        break;
+    case SEEK_END:
+        s->_cur = s->_start + s->len - pos;
     }
 }
 

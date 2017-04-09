@@ -33,10 +33,10 @@ enum {
 
 /* Structure containing game-specific encryption information. */
 struct game_key {
-    bool     uses_initial;     /* Whether or not to use an initial key. */
-    uint32_t master;           /* Master key specific to the game. */
-    uint8_t  fallback_initial; /* Fallback if initial key is 0. */
-    uint8_t  fallback_primary; /* Fallback if primary key is 0. */
+    bool     uses_initial;      /* Whether or not to use an initial key. */
+    uint32_t master;            /* Master key specific to the game. */
+    uint8_t  fallback_initial;  /* Fallback if initial key is 0. */
+    uint8_t  fallback_primary;  /* Fallback if primary key is 0. */
 };
 
 /* Returns the game_key structure for a given game identifier, as

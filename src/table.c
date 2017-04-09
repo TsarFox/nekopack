@@ -80,16 +80,16 @@ struct table_entry *read_table(struct stream *s) {
         stream_read(&size, s, sizeof(uint64_t));
 
         switch (magic) {
-            case ELIF_MAGIC:
-            case HNFN_MAGIC:
-            case NEKO_MAGIC:
-                read_elif(s, root);
-                break;
-            case FILE_MAGIC:
-                read_file(s, root);
-                break;
-            default:
-                ended = 1;
+        case ELIF_MAGIC:
+        case HNFN_MAGIC:
+        case NEKO_MAGIC:
+            read_elif(s, root);
+            break;
+        case FILE_MAGIC:
+            read_file(s, root);
+            break;
+        default:
+            ended = 1;
         }
     } while (!ended);
 
@@ -112,21 +112,21 @@ void read_file(struct stream *s, struct table_entry *root) {
         stream_read(&size, s, sizeof(uint64_t));
 
         switch (magic) {
-            case ADLR_MAGIC:
-                read_adlr(s, tmp);
-                break;
-            case SEGM_MAGIC:
-                read_segm(s, tmp, size / 28);
-                break;
-            case INFO_MAGIC:
-                stream_seek(s, size, SEEK_CUR);
-                break;
-            case TIME_MAGIC:
-                read_time(s, tmp);
-                break;
-            default:
-                ended = true;
-                stream_seek(s, -sizeof(uint32_t) - sizeof(uint64_t), SEEK_CUR);
+        case ADLR_MAGIC:
+            read_adlr(s, tmp);
+            break;
+        case SEGM_MAGIC:
+            read_segm(s, tmp, size / 28);
+            break;
+        case INFO_MAGIC:
+            stream_seek(s, size, SEEK_CUR);
+            break;
+        case TIME_MAGIC:
+            read_time(s, tmp);
+            break;
+        default:
+            ended = true;
+            stream_seek(s, -sizeof(uint32_t) - sizeof(uint64_t), SEEK_CUR);
         }
     } while (!ended);
 

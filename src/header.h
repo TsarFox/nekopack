@@ -27,12 +27,12 @@
 
 /* Structure representing the header section of an XP3 archive. */
 struct header {
-    char     magic[11];    /* Identifier for the archive. */
-    uint64_t info_offset;  /* Offset to `table_size`. */
-    uint32_t version;      /* Raw value containing the archive version. */
-    uint64_t table_size;   /* The size of the table section. (?) */
-    uint8_t  flags;        /* A flags variable for the archive. (?) */
-    uint64_t table_offset; /* Offset to the archive table. */
+    char     magic[11];         /* Identifier for the archive. */
+    uint64_t info_offset;       /* Offset to `table_size`. */
+    uint32_t version;           /* Raw value containing the archive version. */
+    uint64_t table_size;        /* The size of the table section. (?) */
+    uint8_t  flags;             /* A flags variable for the archive. (?) */
+    uint64_t table_offset;      /* Offset to the archive table. */
 };
 
 /* Reads data from the given stream into a newly allocated header
