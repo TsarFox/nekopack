@@ -20,3 +20,5 @@
 #pragma once
 
 char *test_out_path(void);
+char *test_vararg_index(void);
+char *test_game_id(void);

@@ -33,6 +33,8 @@ int tests_run = 0;
 
 static char *run_all_tests(void) {
     mu_run_test(test_out_path);
+    mu_run_test(test_vararg_index);
+    mu_run_test(test_game_id);
     mu_run_test(test_derive_initial);
     mu_run_test(test_derive_primary);
     mu_run_test(test_stream_obj);

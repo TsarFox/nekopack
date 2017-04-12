@@ -24,8 +24,18 @@
 #include "header.h"
 #include "io.h"
 
-static bool is_xp3(struct header *h);
-static bool is_supported(struct header *h);
+
+/* Checks that the header contains the correct magic number. */
+static bool is_xp3(struct header *h) {
+    return !memcmp(h->magic, XP3_MAGIC, 11);
+}
+
+
+/* Checks that the archive's version is supported, and that it is marked
+   as compatible with the KiriKiriZ engine. */
+static bool is_supported(struct header *h) {
+    return h->version == 1 && h->flags & 0x80;
+}
 
 
 /* Reads from the given stream into a newly allocated header structure.
@@ -36,7 +46,7 @@ struct header *read_header(struct stream *s) {
     if (h == NULL) return NULL;
 
     /* The header structure can't be read into directly because of
-       potential alignment issues. */
+       alignment issues. */
     stream_read(h->magic, s, 11);
     stream_read(&h->info_offset, s, sizeof(uint64_t));
     stream_read(&h->version, s, sizeof(uint32_t));
@@ -49,17 +59,4 @@ struct header *read_header(struct stream *s) {
         return NULL;
     }
     return h;
-}
-
-
-/* Checks that the header contains the correct magic number. */
-static bool is_xp3(struct header *h) {
-    return !memcmp(h->magic, XP3_MAGIC, 11);
-}
-
-
-/* Checks that the archive's version is supported, and that it is marked
-   as compatible with the KiriKiriZ engine. */
-static bool is_supported(struct header *h) {
-    return h->version == 1 && h->flags & 0x80;
 }

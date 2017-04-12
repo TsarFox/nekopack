@@ -30,19 +30,19 @@ all: $(BINDIR)/nekopack
 
 $(BINDIR)/nekopack: $(OBJECTS) $(OBJDIR)/main.o
 	@mkdir -p $(BINDIR)
-	$(LD) $(LDFLAGS) $(OBJECTS) $(OBJDIR)/main.o -o bin/nekopack
+	@$(LD) $(LDFLAGS) $(OBJECTS) $(OBJDIR)/main.o -o bin/nekopack
 
 $(BINDIR)/test: $(OBJECTS) $(TEST_OBJECTS)
 	@mkdir -p $(BINDIR)
-	$(LD) $(LDFLAGS) $(OBJECTS) $(TEST_OBJECTS) -o $(BINDIR)/test
+	@$(LD) $(LDFLAGS) $(OBJECTS) $(TEST_OBJECTS) -o $(BINDIR)/test
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	@mkdir -p $(OBJDIR)
-	$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/$*.c
+	@$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/$*.c
 
 $(OBJDIR)/%.o: $(TSTDIR)/%.c
 	@mkdir -p $(OBJDIR)
-	$(CC) $(CFLAGS) -c -o $@ -I $(SRCDIR) $(TSTDIR)/$*.c
+	@$(CC) $(CFLAGS) -c -o $@ -I $(SRCDIR) $(TSTDIR)/$*.c
 
 test: bin/test
 	@bin/test

@@ -33,8 +33,8 @@ static void parse_output_path(const char *optarg, struct params *p) {
     p->out     = malloc(p->out_len + 2);
     strcpy(p->out, optarg);
     if (p->out[p->out_len - 1] != '/') {
-        p->out[p->out_len] = '/';
-        p->out_len        += 1;
+        p->out[p->out_len]  = '/';
+        p->out_len         += 1;
     }
 }
 
@@ -55,6 +55,12 @@ static void parse_game_id(const char *optarg, struct params *p) {
 
 /* Returns a params structure parsed from `argv`. */
 struct params parse_args(int argc, char **argv) {
+    /* getopt maintains external state which needs to be reset each time
+       `parse_args` is called, otherwise strange things will occur. */
+    optind = 1;
+    opterr = 1;
+    optopt = 63;
+
     struct params p = {0};
 
     if (argc < 2) {

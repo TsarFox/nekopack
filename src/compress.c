@@ -43,7 +43,7 @@ struct stream *stream_inflate(struct stream *s, size_t len,
         strm.next_in = (Bytef *) s->_cur;
         do {
             strm.avail_out = decompressed_len;
-            strm.next_out = (Bytef *) n->_cur;
+            strm.next_out  = (Bytef *) n->_cur;
             ret = inflate(&strm, Z_NO_FLUSH);
             if (ret == Z_STREAM_ERROR) {
                 stream_free(n);
