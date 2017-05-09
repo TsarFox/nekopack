@@ -20,3 +20,4 @@
 #pragma once
 
 char *test_header_read(void);
+char *test_header_creation(void);

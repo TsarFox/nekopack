@@ -57,7 +57,8 @@ static void print_help(void) {
            "exit.\n\n"
            "   -e, --extract\tExtract the contents of the archive. This is "
            "the default\n\t\t\taction if no mode argument is provided.\n"
-           "   -l, --list\t\tList the contents of the archive.\n\n"
+           "   -l, --list\t\tList the contents of the archive.\n"
+           "   -c, --create\t\tCreate a new XP3 archive.\n\n"
            "   -o, --output\t\tPath to extract files to.\n"
            "   -g, --game\t\tGame the archive is from. Required for file "
            "decryption.\n"
@@ -197,6 +198,20 @@ static void map_entries(char *path, struct params p) {
 }
 
 
+/* Creates a new XP3 archive at the first path specified by `paths`, and
+   flattens files specified by any following paths into the archive. */
+static void create_archive(char **paths, struct params p) {
+    FILE *fp = fopen(paths[0], "wb+");
+    if (fp == NULL) {
+        perror(paths[0]);
+        return;
+    }
+
+    struct header *h = create_header();
+    dump_header(fp, h);
+}
+
+
 int main(int argc, char **argv) {
     struct params p = parse_args(argc, argv);
     switch (p.mode) {
@@ -214,6 +229,9 @@ int main(int argc, char **argv) {
     case EXTRACT:
         for (int i = p.vararg_index; i < argc; i++)
             map_entries(argv[i], p);
+        break;
+    case CREATE:
+        create_archive(argv + p.vararg_index, p);
     }
     params_free(p);
     return EXIT_SUCCESS;

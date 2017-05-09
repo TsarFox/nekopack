@@ -45,3 +45,11 @@ char *test_header_read(void) {
     stream_free(s);
     return NULL;
 }
+
+
+char *test_header_creation(void) {
+    struct header *h = create_header();
+    mu_assert("Header allocation failed", h != NULL);
+    mu_assert("Incorrect XP3 header", !memcmp(h->magic, XP3_MAGIC, 11));
+    return NULL;
+}

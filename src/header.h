@@ -30,8 +30,8 @@ struct header {
     char     magic[11];         /* Identifier for the archive. */
     uint64_t info_offset;       /* Offset to `table_size`. */
     uint32_t version;           /* Raw value containing the archive version. */
-    uint64_t table_size;        /* The size of the table section. (?) */
     uint8_t  flags;             /* A flags variable for the archive. (?) */
+    uint64_t table_size;        /* The size of the table section. (?) */
     uint64_t table_offset;      /* Offset to the archive table. */
 };
 
@@ -40,3 +40,9 @@ struct header {
    NULL is returned if the header contains an invalid magic number, or
    if the archive's version is not supported. */
 struct header *read_header(struct stream *s);
+
+/* Generates an XP3 header structure readable by Nekopara. */
+struct header *create_header(void);
+
+/* Dumps the XP3 header specified by `h` into `fp`. */
+void dump_header(FILE *fp, struct header *h);

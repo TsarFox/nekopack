@@ -18,6 +18,7 @@
    along with Nekopack. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -59,4 +60,30 @@ struct header *read_header(struct stream *s) {
         return NULL;
     }
     return h;
+}
+
+
+/* Generates an XP3 header structure readable by Nekopara. */
+struct header *create_header(void) {
+    struct header *h = malloc(sizeof(struct header));
+    if (h == NULL) return NULL;
+
+    memcpy(h->magic, XP3_MAGIC, 11);
+    h->info_offset  = 17;
+    h->version      = 1;
+    h->flags        = 0x80;
+    h->table_size   = 0;
+    h->table_offset = 0;
+    return h;
+}
+
+
+/* Dumps the XP3 header specified by `h` into `fp`. */
+void dump_header(FILE *fp, struct header *h) {
+    fwrite(h->magic,         11,               1, fp);
+    fwrite(&h->info_offset,  sizeof(uint64_t), 1, fp);
+    fwrite(&h->version,      sizeof(uint32_t), 1, fp);
+    fwrite(&h->flags,        sizeof(uint8_t),  1, fp);
+    fwrite(&h->table_size,   sizeof(uint64_t), 1, fp);
+    fwrite(&h->table_offset, sizeof(uint64_t), 1, fp);
 }

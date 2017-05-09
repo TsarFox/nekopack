@@ -29,6 +29,7 @@ enum {
     VERSION,
     LIST,
     EXTRACT,
+    CREATE,
 };
 
 /* Structure for storing options set from the command-line. */

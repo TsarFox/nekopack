@@ -76,6 +76,7 @@ struct params parse_args(int argc, char **argv) {
         {"verbose", no_argument, NULL, 'v'},
         {"extract", no_argument, NULL, 'e'},
         {"list", no_argument, NULL, 'l'},
+        {"create", no_argument, NULL, 'c'},
         {"output", no_argument, NULL, 'o'},
         {"game", no_argument, NULL, 'g'},
         {NULL, 0, NULL, 0}
@@ -83,7 +84,7 @@ struct params parse_args(int argc, char **argv) {
 
     do {
         count++;
-        cur = getopt_long(argc, argv, "hVvelqo:g:", long_opts, &opt_index);
+        cur = getopt_long(argc, argv, "hVvelcqo:g:", long_opts, &opt_index);
         switch (cur) {
         case 'h':
             p.mode = HELP;
@@ -106,6 +107,9 @@ struct params parse_args(int argc, char **argv) {
             break;
         case 'l':
             p.mode = LIST;
+            break;
+        case 'c':
+            p.mode = CREATE;
         }
     } while (cur >= 0);
 

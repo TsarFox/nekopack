@@ -1,5 +1,4 @@
-![Nekopack](https://raw.github.com/TsarFox/nekopack/master/Nekopack_Logo.png "Nekopack")
-========
+# ![Nekopack](https://raw.github.com/TsarFox/nekopack/master/Nekopack_Logo.png "Nekopack")
 ## Software programmed and maintained by [Jakob.](http://jakob.space/)
 Nekopack is a work-in-progress attempt at reverse engineering the archive format used by Nekopara.
 
@@ -8,8 +7,7 @@ Please use this software responsibly. I chose to develop and release this becaus
 Nekopack is free software, licensed under the [GNU General Public License.](http://gnu.org/licenses/gpl.html)
 
 
-Compilation
------------
+## Compilation
 Nekopack can be compiled on Linux by running `make` from the repository's root directory.
 
 *BSD users will have to install and run `gmake` to build Nekopack.
@@ -17,7 +15,6 @@ Nekopack can be compiled on Linux by running `make` from the repository's root d
 The test suite is run with `make test` or `gmake test`, depending on your platform.
 
 
-TODO
-----
+## TODO
 * Full unit testing.
 * 100%-compatible repacker.
