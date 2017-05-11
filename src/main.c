@@ -200,7 +200,7 @@ static void map_entries(char *path, struct params p) {
 
 /* Creates a new XP3 archive at the first path specified by `paths`, and
    flattens files specified by any following paths into the archive. */
-static void create_archive(char **paths, struct params p) {
+static void create_archive(char **paths, int argc, struct params p) {
     FILE *fp = fopen(paths[0], "wb+");
     if (fp == NULL) {
         perror(paths[0]);
@@ -208,8 +208,12 @@ static void create_archive(char **paths, struct params p) {
     }
 
     struct header      *h    = create_header();
-    struct table_entry *root = calloc(sizeof(struct table_entry), 1);
+    struct table_entry *root = calloc(sizeof(struct table_entry), 1), *cur;
     dump_header(fp, h);
+    for (int i = 1; i < argc - p.vararg_index; i++) {
+        cur = add_file(root, paths[i]);
+    }
+    dump_table(fp, root);
 }
 
 
@@ -232,7 +236,7 @@ int main(int argc, char **argv) {
             map_entries(argv[i], p);
         break;
     case CREATE:
-        create_archive(argv + p.vararg_index, p);
+        create_archive(argv + p.vararg_index, argc, p);
     }
     params_free(p);
     return EXIT_SUCCESS;

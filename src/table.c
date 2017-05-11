@@ -203,17 +203,75 @@ struct table_entry *add_file(struct table_entry *root, char *path) {
 }
 
 
-/* Dumps an eliF entry into the table at `fp`. */
-static void dump_elif(FILE *fp, char *path, uint32_t key) {
-    /* FIXME: Entry size is likely incorrect. Go back and inspect the
-       table output. */
-    uint16_t  name_len   = strlen(path);
+/* Dumps the adlr segment for `key` into the table at `fp` and returns
+   the number of bytes written. */
+static uint64_t dump_adlr(FILE *fp, uint32_t key) {
+    uint32_t magic = ADLR_MAGIC;
+    uint64_t written, entry_size = sizeof(uint32_t);
+    written  = fwrite(&magic,      sizeof(uint32_t), 1, fp);
+    written += fwrite(&entry_size, sizeof(uint64_t), 1, fp);
+    written += fwrite(&key,        sizeof(uint32_t), 1, fp);
+    return written;
+}
+
+
+/* Dumps the time segment for `timestamp` into the table at `fp` and
+   returns the number of bytes written. */
+static uint64_t dump_time(FILE *fp, uint64_t timestamp) {
+    uint32_t magic = TIME_MAGIC;
+    uint64_t written, entry_size = sizeof(uint64_t);
+    written  = fwrite(&magic,      sizeof(uint32_t), 1, fp);
+    written += fwrite(&entry_size, sizeof(uint32_t), 1, fp);
+    written += fwrite(&timestamp,  sizeof(uint32_t), 1, fp);
+    return written;
+}
+
+
+/* Dumps the segm segment for `cur` into the table at `fp` and returns
+   the number of bytes written. */
+static uint64_t dump_segm(FILE *fp, struct table_entry *cur) {
+    struct segment *s;
+    uint32_t magic = SEGM_MAGIC;
+    uint64_t written, entry_size = cur->segment_count * 28;
+    written  = fwrite(&magic,      sizeof(uint32_t), 1, fp);
+    written += fwrite(&entry_size, sizeof(uint32_t), 1, fp);
+    for (uint64_t i = 0; i < cur->segment_count; i++) {
+        s = cur->segments[i];
+        written += fwrite(&s->compressed,        sizeof(uint32_t), 1, fp);
+        written += fwrite(&s->offset,            sizeof(uint64_t), 1, fp);
+        written += fwrite(&s->decompressed_size, sizeof(uint64_t), 1, fp);
+        written += fwrite(&s->compressed_size,   sizeof(uint64_t), 1, fp);
+    }
+    return written;
+}
+
+
+/* Dumps the File entry for `cur` into the table at `fp`. */
+static void dump_file(FILE *fp, struct table_entry *cur) {
+    uint32_t magic = FILE_MAGIC;
+    uint64_t bytes_written;
+    fwrite(&magic,         sizeof(uint32_t), 1, fp);
+    fwrite(&bytes_written, sizeof(uint64_t), 1, fp);
+    bytes_written  = dump_adlr(fp, cur->key);
+    bytes_written += dump_time(fp, cur->ctime);
+    bytes_written += dump_segm(fp, cur);
+
+    fseek(fp, -bytes_written, SEEK_CUR);
+    fwrite(&bytes_written, sizeof(uint64_t), 1, fp);
+    fseek(fp, bytes_written, SEEK_CUR);
+}
+
+
+/* Dumps the eliF entry for `cur` into the table at `fp`. */
+static void dump_elif(FILE *fp, struct table_entry *cur) {
+    uint32_t  magic      = ELIF_MAGIC;
+    uint16_t  name_len   = strlen(cur->filename);
     uint64_t  entry_size = name_len * 2 + 8;
     char     *encoded    = malloc(name_len * 2 + 2);
-    utf16le_encode(path, encoded, name_len);
-    fwrite(&ELIF_MAGIC, sizeof(uint32_t), 1, fp);
+    utf16le_encode(cur->filename, encoded, name_len);
+    fwrite(&magic,      sizeof(uint32_t), 1, fp);
     fwrite(&entry_size, sizeof(uint64_t), 1, fp);
-    fwrite(&key,        sizeof(uint32_t), 1, fp);
+    fwrite(&cur->key,   sizeof(uint32_t), 1, fp);
     fwrite(&name_len,   sizeof(uint16_t), 1, fp);
     fwrite(encoded,     name_len * 2 + 2, 1, fp);
 }
@@ -222,8 +280,9 @@ static void dump_elif(FILE *fp, char *path, uint32_t key) {
 /* Dumps the XP3 table specified by `root` into `fp`. */
 void dump_table(FILE *fp, struct table_entry *root) {
     struct table_entry *cur;
-    for (cur = root; cur != NULL; cur = cur->next) {
-        dump_elif(fp, cur->filename, cur->key);
+    for (cur = root->next; cur != NULL; cur = cur->next) {
+        dump_elif(fp, cur);
+        dump_file(fp, cur);
     }
 }
 
@@ -238,7 +297,7 @@ struct table_entry *get_node(struct table_entry *root, uint32_t key) {
         if (cur == NULL) return NULL;
         entry_append(root, cur);
         cur->key = key;
-p    }
+    }
     return cur;
 }
 

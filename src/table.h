@@ -73,3 +73,10 @@ void entry_append(struct table_entry *root, struct table_entry *e);
 
 /* Frees every entry in the linked list specified by `cur`. */
 void entry_free(struct table_entry *cur);
+
+/* Dumps the XP3 table specified by `root` into `fp`. */
+void dump_table(FILE *fp, struct table_entry *root);
+
+/* Inserts the file specified by `path` into the table linked list
+   specified by `root`. */
+struct table_entry *add_file(struct table_entry *root, char *path);
