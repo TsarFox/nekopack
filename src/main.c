@@ -207,7 +207,8 @@ static void create_archive(char **paths, struct params p) {
         return;
     }
 
-    struct header *h = create_header();
+    struct header      *h    = create_header();
+    struct table_entry *root = calloc(sizeof(struct table_entry), 1);
     dump_header(fp, h);
 }
 

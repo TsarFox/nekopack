@@ -49,6 +49,7 @@ static char *run_all_tests(void) {
     mu_run_test(test_table_elif);
     mu_run_test(test_table_file);
     mu_run_test(test_decode_utf16le);
+    mu_run_test(test_encode_utf16le);
     return NULL;
 }
 

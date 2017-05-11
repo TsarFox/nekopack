@@ -18,11 +18,13 @@
    along with Nekopack. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <iconv.h>
+#include <string.h>
 
 
 /* Wrapper for iconv, using the conversion specified by `conv`. */
-static void convert(char *in_buf, char *out_buf, size_t len, iconv_t conv) {
-    size_t  in_size  = len,     out_size  = len;
+static void convert(char *in_buf, char *out_buf, size_t in_len,
+                    size_t out_len, iconv_t conv) {
+    size_t  in_size  = in_len,  out_size  = out_len;
     char   *in_start = in_buf, *out_start = out_buf;
     iconv(conv, &in_start, &in_size, &out_start, &out_size);
 }
@@ -31,6 +33,19 @@ static void convert(char *in_buf, char *out_buf, size_t len, iconv_t conv) {
 /* Decodes the UTF-16LE string specified by `in_buf` into `out_buf`. */
 void utf16le_decode(char *in_buf, char *out_buf, size_t len) {
     iconv_t conv = iconv_open("UTF-8", "UTF-16LE");
-    convert(in_buf, out_buf, len, conv);
+    convert(in_buf, out_buf, len, len, conv);
+    iconv_close(conv);
+}
+
+
+/* Encodes the UTF-8 string specified by `in_buf` into a UTF-16LE string
+   stored in `out_buf`. */
+void utf16le_encode(char *in_buf, char *out_buf, size_t len) {
+    iconv_t conv = iconv_open("UTF-16LE", "UTF-8");
+    /* This is to ensure that the null-terminator is included in the
+       encoded string. */
+    if (strlen(in_buf) == len)
+        len++;
+    convert(in_buf, out_buf, len, len * 2 + 2, conv);
     iconv_close(conv);
 }

@@ -60,6 +60,10 @@ void read_elif(struct stream *s, struct table_entry *root);
    to the linked list. */
 void read_file(struct stream *s, struct table_entry *root);
 
+/* Inserts the file specified by `path` into the table linked list
+   specified by `root`. */
+struct table_entry *add_file(struct table_entry *root, char *path);
+
 /* Traverses `root` for a node with the given key. If the linked list
    lacks a node with the key, a new node is created and appended. */
 struct table_entry *get_node(struct table_entry *root, uint32_t key);

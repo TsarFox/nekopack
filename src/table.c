@@ -66,37 +66,6 @@ static void read_time(struct stream *s, struct table_entry *tmp) {
 }
 
 
-/* Returns the root of a linked list containing all of the files listed
-   in the archive's table section. */
-struct table_entry *read_table(struct stream *s) {
-    struct table_entry *root = calloc(sizeof(struct table_entry), 1);
-
-    bool     ended = false;
-    uint32_t magic;
-    uint64_t size;
-
-    do {
-        stream_read(&magic, s, sizeof(uint32_t));
-        stream_read(&size, s, sizeof(uint64_t));
-
-        switch (magic) {
-        case ELIF_MAGIC:
-        case HNFN_MAGIC:
-        case NEKO_MAGIC:
-            read_elif(s, root);
-            break;
-        case FILE_MAGIC:
-            read_file(s, root);
-            break;
-        default:
-            ended = 1;
-        }
-    } while (!ended);
-
-    return root;
-}
-
-
 /* Reads the contents of a File chunk. If there is an entry with a
    matching key in the linked list specified by `root`, that structure
    will be modified. Otherwise, a new entry will be created and appended
@@ -186,6 +155,79 @@ void read_elif(struct stream *s, struct table_entry *root) {
 }
 
 
+/* Returns the root of a linked list containing all of the files listed
+   in the archive's table section. */
+struct table_entry *read_table(struct stream *s) {
+    struct table_entry *root = calloc(sizeof(struct table_entry), 1);
+
+    bool     ended = false;
+    uint32_t magic;
+    uint64_t size;
+
+    do {
+        stream_read(&magic, s, sizeof(uint32_t));
+        stream_read(&size, s, sizeof(uint64_t));
+
+        switch (magic) {
+        case ELIF_MAGIC:
+        case HNFN_MAGIC:
+        case NEKO_MAGIC:
+            read_elif(s, root);
+            break;
+        case FILE_MAGIC:
+            read_file(s, root);
+            break;
+        default:
+            ended = 1;
+        }
+    } while (!ended);
+
+    return root;
+}
+
+
+/* Inserts the file specified by `path` into the table linked list
+   specified by `root`. */
+struct table_entry *add_file(struct table_entry *root, char *path) {
+    struct table_entry *new = calloc(sizeof(struct table_entry), 1);
+    size_t name_len = strlen(path);
+    new->filename   = malloc(name_len);
+    strncpy(new->filename, path, name_len);
+
+    new->key   = 0xffffffff;
+    new->ctime = 0;
+    new->segment_count = 0;
+    entry_append(root, new);
+
+    return new;
+}
+
+
+/* Dumps an eliF entry into the table at `fp`. */
+static void dump_elif(FILE *fp, char *path, uint32_t key) {
+    /* FIXME: Entry size is likely incorrect. Go back and inspect the
+       table output. */
+    uint16_t  name_len   = strlen(path);
+    uint64_t  entry_size = name_len * 2 + 8;
+    char     *encoded    = malloc(name_len * 2 + 2);
+    utf16le_encode(path, encoded, name_len);
+    fwrite(&ELIF_MAGIC, sizeof(uint32_t), 1, fp);
+    fwrite(&entry_size, sizeof(uint64_t), 1, fp);
+    fwrite(&key,        sizeof(uint32_t), 1, fp);
+    fwrite(&name_len,   sizeof(uint16_t), 1, fp);
+    fwrite(encoded,     name_len * 2 + 2, 1, fp);
+}
+
+
+/* Dumps the XP3 table specified by `root` into `fp`. */
+void dump_table(FILE *fp, struct table_entry *root) {
+    struct table_entry *cur;
+    for (cur = root; cur != NULL; cur = cur->next) {
+        dump_elif(fp, cur->filename, cur->key);
+    }
+}
+
+
 /* Traverses `root` for a node with the given key. If the linked list
    lacks a node with the key, a new node is created and appended. */
 struct table_entry *get_node(struct table_entry *root, uint32_t key) {
@@ -196,7 +238,7 @@ struct table_entry *get_node(struct table_entry *root, uint32_t key) {
         if (cur == NULL) return NULL;
         entry_append(root, cur);
         cur->key = key;
-    }
+p    }
     return cur;
 }
 

@@ -20,3 +20,4 @@
 #pragma once
 
 char *test_decode_utf16le(void);
+char *test_encode_utf16le(void);

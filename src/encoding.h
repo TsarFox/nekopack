@@ -21,3 +21,7 @@
 
 /* Decodes the UTF-16LE string specified by `in_buf` into `out_buf`. */
 void utf16le_decode(char *in_buf, char *out_buf, size_t len);
+
+/* Encodes the UTF-8 string specified by `in_buf` into a UTF-16LE string
+   stored in `out_buf`. */
+void utf16le_encode(char *in_buf, char *out_buf, size_t len);
