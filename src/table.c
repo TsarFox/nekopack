@@ -46,10 +46,10 @@ static void read_segm(struct stream *s, struct table_entry *tmp, uint64_t count)
     for (uint64_t i = 0; i < count; i++) {
         tmp->segments[i] = malloc(sizeof(struct segment));
         if (tmp->segments[i] == NULL) return;
-        stream_read(&tmp->segments[i]->compressed, s, sizeof(uint32_t));
-        stream_read(&tmp->segments[i]->offset, s, sizeof(uint64_t));
+        stream_read(&tmp->segments[i]->compressed,        s, sizeof(uint32_t));
+        stream_read(&tmp->segments[i]->offset,            s, sizeof(uint64_t));
         stream_read(&tmp->segments[i]->decompressed_size, s, sizeof(uint64_t));
-        stream_read(&tmp->segments[i]->compressed_size, s, sizeof(uint64_t));
+        stream_read(&tmp->segments[i]->compressed_size,   s, sizeof(uint64_t));
     }
 }
 
@@ -203,86 +203,86 @@ struct table_entry *add_file(struct table_entry *root, char *path) {
 }
 
 
-/* Dumps the adlr segment for `key` into the table at `fp` and returns
+/* Dumps the adlr segment for `key` into the table at `s` and returns
    the number of bytes written. */
-static uint64_t dump_adlr(FILE *fp, uint32_t key) {
+static uint64_t dump_adlr(struct stream *s, uint32_t key) {
     uint32_t magic = ADLR_MAGIC;
-    uint64_t written, entry_size = sizeof(uint32_t);
-    written  = fwrite(&magic,      sizeof(uint32_t), 1, fp);
-    written += fwrite(&entry_size, sizeof(uint64_t), 1, fp);
-    written += fwrite(&key,        sizeof(uint32_t), 1, fp);
-    return written;
+    uint64_t entry_size = sizeof(uint32_t);
+    stream_write(s, &magic,      sizeof(uint32_t));
+    stream_write(s, &entry_size, sizeof(uint64_t));
+    stream_write(s, &key,        sizeof(uint32_t));
+    return 16;
 }
 
 
-/* Dumps the time segment for `timestamp` into the table at `fp` and
+/* Dumps the time segment for `timestamp` into the table at `s` and
    returns the number of bytes written. */
-static uint64_t dump_time(FILE *fp, uint64_t timestamp) {
+static uint64_t dump_time(struct stream *s, uint64_t timestamp) {
     uint32_t magic = TIME_MAGIC;
-    uint64_t written, entry_size = sizeof(uint64_t);
-    written  = fwrite(&magic,      sizeof(uint32_t), 1, fp);
-    written += fwrite(&entry_size, sizeof(uint32_t), 1, fp);
-    written += fwrite(&timestamp,  sizeof(uint32_t), 1, fp);
-    return written;
+    uint64_t entry_size = sizeof(uint64_t);
+    stream_write(s, &magic,      sizeof(uint32_t));
+    stream_write(s, &entry_size, sizeof(uint64_t));
+    stream_write(s, &timestamp,  sizeof(uint64_t));
+    return 20;
 }
 
 
-/* Dumps the segm segment for `cur` into the table at `fp` and returns
+/* Dumps the segm segment for `cur` into the table at `s` and returns
    the number of bytes written. */
-static uint64_t dump_segm(FILE *fp, struct table_entry *cur) {
-    struct segment *s;
+static uint64_t dump_segm(struct stream *s, struct table_entry *cur) {
+    struct segment *segm;
     uint32_t magic = SEGM_MAGIC;
-    uint64_t written, entry_size = cur->segment_count * 28;
-    written  = fwrite(&magic,      sizeof(uint32_t), 1, fp);
-    written += fwrite(&entry_size, sizeof(uint32_t), 1, fp);
+    uint64_t entry_size = cur->segment_count * 28;
+    stream_write(s, &magic,      sizeof(uint32_t));
+    stream_write(s, &entry_size, sizeof(uint64_t));
     for (uint64_t i = 0; i < cur->segment_count; i++) {
-        s = cur->segments[i];
-        written += fwrite(&s->compressed,        sizeof(uint32_t), 1, fp);
-        written += fwrite(&s->offset,            sizeof(uint64_t), 1, fp);
-        written += fwrite(&s->decompressed_size, sizeof(uint64_t), 1, fp);
-        written += fwrite(&s->compressed_size,   sizeof(uint64_t), 1, fp);
+        segm = cur->segments[i];
+        stream_write(s, &segm->compressed,        sizeof(uint32_t));
+        stream_write(s, &segm->offset,            sizeof(uint64_t));
+        stream_write(s, &segm->decompressed_size, sizeof(uint64_t));
+        stream_write(s, &segm->compressed_size,   sizeof(uint64_t));
     }
-    return written;
+    return 12 + 28 * cur->segment_count;
 }
 
 
-/* Dumps the File entry for `cur` into the table at `fp`. */
-static void dump_file(FILE *fp, struct table_entry *cur) {
+/* Dumps the File entry for `cur` into the table at `s`. */
+static void dump_file(struct stream *s, struct table_entry *cur) {
     uint32_t magic = FILE_MAGIC;
     uint64_t bytes_written;
-    fwrite(&magic,         sizeof(uint32_t), 1, fp);
-    fwrite(&bytes_written, sizeof(uint64_t), 1, fp);
-    bytes_written  = dump_adlr(fp, cur->key);
-    bytes_written += dump_time(fp, cur->ctime);
-    bytes_written += dump_segm(fp, cur);
+    stream_write(s, &magic,         sizeof(uint32_t));
+    stream_write(s, &bytes_written, sizeof(uint64_t));
+    bytes_written  = dump_adlr(s, cur->key);
+    bytes_written += dump_time(s, cur->ctime);
+    bytes_written += dump_segm(s, cur);
 
-    fseek(fp, -bytes_written, SEEK_CUR);
-    fwrite(&bytes_written, sizeof(uint64_t), 1, fp);
-    fseek(fp, bytes_written, SEEK_CUR);
+    stream_seek(s, -bytes_written, SEEK_CUR);
+    stream_write(s, &bytes_written, sizeof(uint64_t));
+    stream_seek(s, bytes_written, SEEK_CUR);
 }
 
 
-/* Dumps the eliF entry for `cur` into the table at `fp`. */
-static void dump_elif(FILE *fp, struct table_entry *cur) {
+/* Dumps the eliF entry for `cur` into the table at `s`. */
+static void dump_elif(struct stream *s, struct table_entry *cur) {
     uint32_t  magic      = ELIF_MAGIC;
     uint16_t  name_len   = strlen(cur->filename);
     uint64_t  entry_size = name_len * 2 + 8;
     char     *encoded    = malloc(name_len * 2 + 2);
     utf16le_encode(cur->filename, encoded, name_len);
-    fwrite(&magic,      sizeof(uint32_t), 1, fp);
-    fwrite(&entry_size, sizeof(uint64_t), 1, fp);
-    fwrite(&cur->key,   sizeof(uint32_t), 1, fp);
-    fwrite(&name_len,   sizeof(uint16_t), 1, fp);
-    fwrite(encoded,     name_len * 2 + 2, 1, fp);
+    stream_write(s, &magic,      sizeof(uint32_t));
+    stream_write(s, &entry_size, sizeof(uint64_t));
+    stream_write(s, &cur->key,   sizeof(uint32_t));
+    stream_write(s, &name_len,   sizeof(uint16_t));
+    stream_write(s, encoded,     name_len * 2 + 2);
 }
 
 
-/* Dumps the XP3 table specified by `root` into `fp`. */
-void dump_table(FILE *fp, struct table_entry *root) {
+/* Dumps the XP3 table specified by `root` into `s`. */
+void dump_table(struct stream *s, struct table_entry *root) {
     struct table_entry *cur;
     for (cur = root->next; cur != NULL; cur = cur->next) {
-        dump_elif(fp, cur);
-        dump_file(fp, cur);
+        dump_elif(s, cur);
+        dump_file(s, cur);
     }
 }
 

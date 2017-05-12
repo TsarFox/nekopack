@@ -207,13 +207,20 @@ static void create_archive(char **paths, int argc, struct params p) {
         return;
     }
 
-    struct header      *h    = create_header();
-    struct table_entry *root = calloc(sizeof(struct table_entry), 1), *cur;
+    struct header      *h     = create_header();
+    struct table_entry *root  = calloc(sizeof(struct table_entry), 1), *cur;
+    struct stream      *table = stream_new(1);
     dump_header(fp, h);
     for (int i = 1; i < argc - p.vararg_index; i++) {
         cur = add_file(root, paths[i]);
     }
-    dump_table(fp, root);
+    dump_table(table, root);
+    /* FIXME: table->len steps the bounds of the table and leaks memory
+       which can potentially be a huge security risk. Either fix the
+       functionality that expands the stream in memory, or get a table
+       size. */
+    stream_seek(table, 0, SEEK_SET);
+    stream_dump(fp, table, table->len);
 }
 
 
