@@ -37,8 +37,8 @@
 
 
 /* Writes usage information to stderr. */
-static void print_usage(char *prog_name) {
-    fprintf(stderr, "Usage: %s [OPTIONS] (ARCHIVES) [PATHS]\n", prog_name);
+static void print_usage(char *progn) {
+    fprintf(stderr, "Usage: %s [OPTIONS] (ARCHIVES) [PATHS]\n", progn);
 }
 
 
@@ -82,7 +82,8 @@ static struct stream *load_table(struct stream *s) {
 }
 
 
-/* Creates any directories that do not already exist in `path`. */
+/* Creates any directories that do not already exist in `path`,
+   including non-existent parents. */
 void make_dirs(char *path) {
     char *buf       = calloc(0x100, 1);
     char *buf_start = buf;
@@ -103,8 +104,8 @@ void make_dirs(char *path) {
 
 /* Concatenates `name` and the output path specified in `p`. */
 static char *get_path(struct params p, char *name) {
-    size_t name_len = strlen(name);
-    char *path = malloc(p.out_len + name_len + 2);
+    size_t  name_len = strlen(name);
+    char   *path     = malloc(p.out_len + name_len + 2);
     strcpy(path, p.out);
     strcpy(path + p.out_len, name);
     return path;
@@ -114,7 +115,7 @@ static char *get_path(struct params p, char *name) {
 /* Prints the filename of the entry specified by `e` to stdout. */
 static void list(struct table_entry *e) {
     if (e->filename == NULL || e->segments == NULL) {
-        fprintf(stderr, "Inconsistency detected. Archive may be corrupted.\n");
+        fprintf(stderr, "Unpaired entries found. Archive may be corrupted.\n");
         return;
     }
     printf("%s\n", e->filename);
@@ -124,7 +125,7 @@ static void list(struct table_entry *e) {
 /* Extracts the archive entry specified by `e` to disk. */
 static void extract(struct stream *s, struct table_entry *e, struct params p) {
     if (e->filename == NULL || e->segments == NULL) {
-        fprintf(stderr, "Inconsistency detected. Archive may be corrupted.\n");
+        fprintf(stderr, "Unpaired entries found. Archive may be corrupted.\n");
         return;
     }
 
@@ -153,8 +154,8 @@ static void extract(struct stream *s, struct table_entry *e, struct params p) {
         }
 
         struct game_key k = get_key(p.game);
-        uint8_t initial   = derive_initial(k, e->key);
-        uint8_t primary   = derive_primary(k, e->key);
+        uint8_t initial = derive_initial(k, e->key);
+        uint8_t primary = derive_primary(k, e->key);
         stream_xor(segm_data, initial, primary);
 
         stream_dump(fp, segm_data, segm_data->len);
@@ -193,8 +194,8 @@ static void map_entries(char *path, struct params p) {
 
     entry_free(root);
     stream_free(table);
-    free(h);
     stream_free(archive);
+    free(h);
 }
 
 
@@ -207,10 +208,11 @@ static void create_archive(char **paths, int argc, struct params p) {
         return;
     }
 
-    struct header      *h     = create_header();
-    struct table_entry *root  = calloc(sizeof(struct table_entry), 1), *cur;
-    struct stream      *table = stream_new(1);
+    struct table_entry *cur, *root = calloc(sizeof(struct table_entry), 1);
+    struct header      *h          = create_header();
+    struct stream      *table      = stream_new(1);
     uint64_t            table_size;
+
     dump_header(fp, h);
     for (int i = 1; i < argc - p.vararg_index; i++) {
         cur = add_file(root, paths[i]);

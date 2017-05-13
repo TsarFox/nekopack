@@ -42,8 +42,8 @@ void utf16le_decode(char *in_buf, char *out_buf, size_t len) {
    stored in `out_buf`. */
 void utf16le_encode(char *in_buf, char *out_buf, size_t len) {
     iconv_t conv = iconv_open("UTF-16LE", "UTF-8");
-    /* This is to ensure that the null-terminator is included in the
-       encoded string. */
+    /* This is done to ensure that the null-terminator is included in
+       the encoded string. */
     if (strlen(in_buf) == len)
         len++;
     convert(in_buf, out_buf, len, len * 2 + 2, conv);

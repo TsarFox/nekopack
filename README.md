@@ -17,4 +17,5 @@ The test suite is run with `make test` or `gmake test`, depending on your platfo
 
 ## TODO
 * Full unit testing.
-* 100%-compatible repacker.
+* Clean up `main.c`, move functions like `load_table` and `make_dirs` into more appropriate files.
+* Strict warnings.
