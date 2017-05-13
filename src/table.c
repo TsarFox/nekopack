@@ -203,33 +203,28 @@ struct table_entry *add_file(struct table_entry *root, char *path) {
 }
 
 
-/* Dumps the adlr segment for `key` into the table at `s` and returns
-   the number of bytes written. */
-static uint64_t dump_adlr(struct stream *s, uint32_t key) {
+/* Dumps the adlr segment for `key` into the table at `s`. */
+static void dump_adlr(struct stream *s, uint32_t key) {
     uint32_t magic = ADLR_MAGIC;
     uint64_t entry_size = sizeof(uint32_t);
     stream_write(s, &magic,      sizeof(uint32_t));
     stream_write(s, &entry_size, sizeof(uint64_t));
     stream_write(s, &key,        sizeof(uint32_t));
-    return 16;
 }
 
 
-/* Dumps the time segment for `timestamp` into the table at `s` and
-   returns the number of bytes written. */
-static uint64_t dump_time(struct stream *s, uint64_t timestamp) {
+/* Dumps the time segment for `timestamp` into the table at `s`. */
+static void dump_time(struct stream *s, uint64_t timestamp) {
     uint32_t magic = TIME_MAGIC;
     uint64_t entry_size = sizeof(uint64_t);
     stream_write(s, &magic,      sizeof(uint32_t));
     stream_write(s, &entry_size, sizeof(uint64_t));
     stream_write(s, &timestamp,  sizeof(uint64_t));
-    return 20;
 }
 
 
-/* Dumps the segm segment for `cur` into the table at `s` and returns
-   the number of bytes written. */
-static uint64_t dump_segm(struct stream *s, struct table_entry *cur) {
+/* Dumps the segm segment for `cur` into the table at `s`. */
+static void dump_segm(struct stream *s, struct table_entry *cur) {
     struct segment *segm;
     uint32_t magic = SEGM_MAGIC;
     uint64_t entry_size = cur->segment_count * 28;
@@ -242,48 +237,56 @@ static uint64_t dump_segm(struct stream *s, struct table_entry *cur) {
         stream_write(s, &segm->decompressed_size, sizeof(uint64_t));
         stream_write(s, &segm->compressed_size,   sizeof(uint64_t));
     }
-    return 12 + 28 * cur->segment_count;
 }
 
 
-/* Dumps the File entry for `cur` into the table at `s`. */
-static void dump_file(struct stream *s, struct table_entry *cur) {
+/* Dumps the File entry for `cur` into the table at `s` and returns the
+   number of bytes written. */
+static uint64_t dump_file(struct stream *s, struct table_entry *cur) {
     uint32_t magic = FILE_MAGIC;
-    uint64_t bytes_written;
     stream_write(s, &magic,         sizeof(uint32_t));
     stream_write(s, &bytes_written, sizeof(uint64_t));
-    bytes_written  = dump_adlr(s, cur->key);
-    bytes_written += dump_time(s, cur->ctime);
-    bytes_written += dump_segm(s, cur);
+
+    dump_adlr(s, cur->key);
+    dump_time(s, cur->ctime);
+    dump_segm(s, cur);
 
     stream_seek(s, -bytes_written, SEEK_CUR);
     stream_write(s, &bytes_written, sizeof(uint64_t));
     stream_seek(s, bytes_written, SEEK_CUR);
+    return 28 * cur->segment_count + 48;
 }
 
 
-/* Dumps the eliF entry for `cur` into the table at `s`. */
-static void dump_elif(struct stream *s, struct table_entry *cur) {
+/* Dumps the eliF entry for `cur` into the table at `s` and returns the
+   number of bytes written. */
+static uint64_t dump_elif(struct stream *s, struct table_entry *cur) {
     uint32_t  magic      = ELIF_MAGIC;
     uint16_t  name_len   = strlen(cur->filename);
     uint64_t  entry_size = name_len * 2 + 8;
     char     *encoded    = malloc(name_len * 2 + 2);
     utf16le_encode(cur->filename, encoded, name_len);
+
     stream_write(s, &magic,      sizeof(uint32_t));
     stream_write(s, &entry_size, sizeof(uint64_t));
     stream_write(s, &cur->key,   sizeof(uint32_t));
     stream_write(s, &name_len,   sizeof(uint16_t));
     stream_write(s, encoded,     name_len * 2 + 2);
+    return 18 + name_len * 2 + 2;
 }
 
 
-/* Dumps the XP3 table specified by `root` into `s`. */
-void dump_table(struct stream *s, struct table_entry *root) {
+/* Dumps the XP3 table specified by `root` into `s` and returns the
+   number of bytes written. */
+uint64_t dump_table(struct stream *s, struct table_entry *root) {
+    uint64_t bytes_written = 0;
     struct table_entry *cur;
     for (cur = root->next; cur != NULL; cur = cur->next) {
-        dump_elif(s, cur);
-        dump_file(s, cur);
+        bytes_written += dump_elif(s, cur);
+        bytes_written += dump_file(s, cur);
     }
+    stream_seek(s, 0, SEEK_SET);
+    return bytes_written;
 }
 
 

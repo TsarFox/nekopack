@@ -33,7 +33,7 @@
 #define EXIT_FAILURE 1
 #define EXIT_SUCCESS 0
 
-#define VERSION_STR "2.0.0"
+#define VERSION_STR "2.1.0b1"
 
 
 /* Writes usage information to stderr. */
@@ -71,7 +71,7 @@ static void print_help(void) {
 
 /* Inflates the table according to information in the header. */
 static struct stream *load_table(struct stream *s) {
-    uint8_t compressed;
+    uint8_t  compressed;
     uint64_t len, decompressed_len;
     stream_read(&compressed, s, sizeof(uint8_t));
     stream_read(&len, s, sizeof(uint64_t));
@@ -210,17 +210,13 @@ static void create_archive(char **paths, int argc, struct params p) {
     struct header      *h     = create_header();
     struct table_entry *root  = calloc(sizeof(struct table_entry), 1), *cur;
     struct stream      *table = stream_new(1);
+    uint64_t            table_size;
     dump_header(fp, h);
     for (int i = 1; i < argc - p.vararg_index; i++) {
         cur = add_file(root, paths[i]);
     }
-    dump_table(table, root);
-    /* FIXME: table->len steps the bounds of the table and leaks memory
-       which can potentially be a huge security risk. Either fix the
-       functionality that expands the stream in memory, or get a table
-       size. */
-    stream_seek(table, 0, SEEK_SET);
-    stream_dump(fp, table, table->len);
+    table_size = dump_table(table, root);
+    stream_dump(fp, table, table_size);
 }
 
 
