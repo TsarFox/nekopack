@@ -17,9 +17,13 @@
    You should have received a copy of the GNU General Public License
    along with Nekopack. If not, see <http://www.gnu.org/licenses/>. */
 
+#include <stdlib.h>
+
 #include <zlib.h>
 
 #include "io.h"
+
+#define LEVEL -1
 
 
 /* Inflates `s` into a newly allocated stream structure. */
@@ -55,4 +59,30 @@ struct stream *stream_inflate(struct stream *s, size_t len,
 
     inflateEnd(&strm);
     return n;
+}
+
+
+/* Deflates `s` into a newly allocated stream structure. */
+struct stream *stream_deflate(struct stream *s, size_t len) {
+    struct stream *new = stream_new(len);
+    z_stream  strm;
+    strm.zalloc   = Z_NULL;
+    strm.zfree    = Z_NULL;
+    strm.opaque   = Z_NULL;
+
+    if (deflateInit(&strm, LEVEL) != Z_OK)
+        return NULL;
+
+    do {
+        strm.avail_in = len;
+        strm.next_in  = (unsigned char *) s->_cur;
+        do {
+            strm.avail_out = len;
+            strm.next_out  = (unsigned char *) new->_cur;
+            deflate(&strm, Z_NO_FLUSH); // Flush param may cause issues.
+        } while (strm.avail_out == 0);
+    } while (0);
+
+    deflateEnd(&strm);
+    return new;
 }

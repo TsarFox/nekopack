@@ -24,3 +24,6 @@
 /* Inflates `s` into a newly allocated stream structure. */
 struct stream *stream_inflate(struct stream *s, size_t len,
                               size_t decompressed_len);
+
+/* Deflates `s` into a newly allocated stream structure. */
+struct stream *stream_deflate(struct stream *s, size_t len);

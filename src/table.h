@@ -44,9 +44,11 @@ struct table_entry {
 };
 
 
-/* Returns the root of a linked list containing all of the files listed
-   in the archive's table section. */
-struct table_entry *read_table(struct stream *s);
+/* Reads the contents of a File chunk. If there is an entry with a
+   matching key in the linked list specified by `root`, that structure
+   will be modified. Otherwise, a new entry will be created and appended
+   to the linked list. */
+void read_file(struct stream *s, struct table_entry *root);
 
 /* Reads the contents of an eliF chunk. If there is an entry with a
    matching key in the linked list specified by `root`, that structure
@@ -54,11 +56,13 @@ struct table_entry *read_table(struct stream *s);
    to the linked list. */
 void read_elif(struct stream *s, struct table_entry *root);
 
-/* Reads the contents of a File chunk. If there is an entry with a
-   matching key in the linked list specified by `root`, that structure
-   will be modified. Otherwise, a new entry will be created and appended
-   to the linked list. */
-void read_file(struct stream *s, struct table_entry *root);
+/* Returns the root of a linked list containing all of the files listed
+   in the archive's table section. */
+struct table_entry *read_table(struct stream *s);
+
+/* Dumps the XP3 table specified by `root` into `s` and returns the
+   number of bytes written. */
+uint64_t dump_table(struct stream *s, struct table_entry *root);
 
 /* Inserts the file specified by `path` into the table linked list
    specified by `root`. */
@@ -73,11 +77,3 @@ void entry_append(struct table_entry *root, struct table_entry *e);
 
 /* Frees every entry in the linked list specified by `cur`. */
 void entry_free(struct table_entry *cur);
-
-/* Dumps the XP3 table specified by `root` into `s` and returns the
-   number of bytes written. */
-uint64_t dump_table(struct stream *s, struct table_entry *root);
-
-/* Inserts the file specified by `path` into the table linked list
-   specified by `root`. */
-struct table_entry *add_file(struct table_entry *root, char *path);

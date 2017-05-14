@@ -54,15 +54,52 @@ static void read_segm(struct stream *s, struct table_entry *tmp, uint64_t count)
 }
 
 
+/* Dumps the segm segment for `cur` into the table at `s`. */
+static void dump_segm(struct stream *s, struct table_entry *cur) {
+    struct segment *segm;
+    uint32_t        magic      = SEGM_MAGIC;
+    uint64_t        entry_size = cur->segment_count * 28;
+    stream_write(s, &magic,      sizeof(uint32_t));
+    stream_write(s, &entry_size, sizeof(uint64_t));
+    for (uint64_t i = 0; i < cur->segment_count; i++) {
+        segm = cur->segments[i];
+        stream_write(s, &segm->compressed,        sizeof(uint32_t));
+        stream_write(s, &segm->offset,            sizeof(uint64_t));
+        stream_write(s, &segm->decompressed_size, sizeof(uint64_t));
+        stream_write(s, &segm->compressed_size,   sizeof(uint64_t));
+    }
+}
+
+
 /* Reads an adlr chunk into the table_entry specified by `tmp`. */
 static void read_adlr(struct stream *s, struct table_entry *tmp) {
     stream_read(&tmp->key, s, sizeof(uint32_t));
 }
 
 
+/* Dumps the adlr segment for `key` into the table at `s`. */
+static void dump_adlr(struct stream *s, uint32_t key) {
+    uint32_t magic      = ADLR_MAGIC;
+    uint64_t entry_size = sizeof(uint32_t);
+    stream_write(s, &magic,      sizeof(uint32_t));
+    stream_write(s, &entry_size, sizeof(uint64_t));
+    stream_write(s, &key,        sizeof(uint32_t));
+}
+
+
 /* Reads a time chunk into the table_entry specified by `tmp`. */
 static void read_time(struct stream *s, struct table_entry *tmp) {
     stream_read(&tmp->ctime, s, sizeof(uint64_t));
+}
+
+
+/* Dumps the time segment for `timestamp` into the table at `s`. */
+static void dump_time(struct stream *s, uint64_t timestamp) {
+    uint32_t magic      = TIME_MAGIC;
+    uint64_t entry_size = sizeof(uint64_t);
+    stream_write(s, &magic,      sizeof(uint32_t));
+    stream_write(s, &entry_size, sizeof(uint64_t));
+    stream_write(s, &timestamp,  sizeof(uint64_t));
 }
 
 
@@ -104,6 +141,25 @@ void read_file(struct stream *s, struct table_entry *root) {
     cur->segments = tmp->segments;
     cur->ctime = tmp->ctime;
     free(tmp);
+}
+
+
+/* Dumps the File entry for `cur` into the table at `s` and returns the
+   number of bytes written. */
+static uint64_t dump_file(struct stream *s, struct table_entry *cur) {
+    uint32_t magic         = FILE_MAGIC;
+    uint64_t bytes_written = 28 * cur->segment_count + 48;
+    stream_write(s, &magic,         sizeof(uint32_t));
+    stream_write(s, &bytes_written, sizeof(uint64_t));
+
+    dump_adlr(s, cur->key);
+    dump_time(s, cur->ctime);
+    dump_segm(s, cur);
+
+    stream_seek(s, -bytes_written, SEEK_CUR);
+    stream_write(s, &bytes_written, sizeof(uint64_t));
+    stream_seek(s, bytes_written, SEEK_CUR);
+    return bytes_written;
 }
 
 
@@ -155,6 +211,24 @@ void read_elif(struct stream *s, struct table_entry *root) {
 }
 
 
+/* Dumps the eliF entry for `cur` into the table at `s` and returns the
+   number of bytes written. */
+static uint64_t dump_elif(struct stream *s, struct table_entry *cur) {
+    uint32_t  magic      = ELIF_MAGIC;
+    uint16_t  name_len   = strlen(cur->filename);
+    uint64_t  entry_size = name_len * 2 + 8;
+    char     *encoded    = malloc(name_len * 2 + 2);
+    utf16le_encode(cur->filename, encoded, name_len);
+
+    stream_write(s, &magic,      sizeof(uint32_t));
+    stream_write(s, &entry_size, sizeof(uint64_t));
+    stream_write(s, &cur->key,   sizeof(uint32_t));
+    stream_write(s, &name_len,   sizeof(uint16_t));
+    stream_write(s, encoded,     name_len * 2 + 2);
+    return 18 + name_len * 2 + 2;
+}
+
+
 /* Returns the root of a linked list containing all of the files listed
    in the archive's table section. */
 struct table_entry *read_table(struct stream *s) {
@@ -186,6 +260,20 @@ struct table_entry *read_table(struct stream *s) {
 }
 
 
+/* Dumps the XP3 table specified by `root` into `s` and returns the
+   number of bytes written. */
+uint64_t dump_table(struct stream *s, struct table_entry *root) {
+    uint64_t bytes_written = 0;
+    struct table_entry *cur;
+    for (cur = root->next; cur != NULL; cur = cur->next) {
+        bytes_written += dump_elif(s, cur);
+        bytes_written += dump_file(s, cur);
+    }
+    stream_seek(s, 0, SEEK_SET);
+    return bytes_written;
+}
+
+
 /* Inserts the file specified by `path` into the table linked list
    specified by `root`. */
 struct table_entry *add_file(struct table_entry *root, char *path) {
@@ -200,94 +288,6 @@ struct table_entry *add_file(struct table_entry *root, char *path) {
     entry_append(root, new);
 
     return new;
-}
-
-
-/* Dumps the adlr segment for `key` into the table at `s`. */
-static void dump_adlr(struct stream *s, uint32_t key) {
-    uint32_t magic = ADLR_MAGIC;
-    uint64_t entry_size = sizeof(uint32_t);
-    stream_write(s, &magic,      sizeof(uint32_t));
-    stream_write(s, &entry_size, sizeof(uint64_t));
-    stream_write(s, &key,        sizeof(uint32_t));
-}
-
-
-/* Dumps the time segment for `timestamp` into the table at `s`. */
-static void dump_time(struct stream *s, uint64_t timestamp) {
-    uint32_t magic = TIME_MAGIC;
-    uint64_t entry_size = sizeof(uint64_t);
-    stream_write(s, &magic,      sizeof(uint32_t));
-    stream_write(s, &entry_size, sizeof(uint64_t));
-    stream_write(s, &timestamp,  sizeof(uint64_t));
-}
-
-
-/* Dumps the segm segment for `cur` into the table at `s`. */
-static void dump_segm(struct stream *s, struct table_entry *cur) {
-    struct segment *segm;
-    uint32_t magic = SEGM_MAGIC;
-    uint64_t entry_size = cur->segment_count * 28;
-    stream_write(s, &magic,      sizeof(uint32_t));
-    stream_write(s, &entry_size, sizeof(uint64_t));
-    for (uint64_t i = 0; i < cur->segment_count; i++) {
-        segm = cur->segments[i];
-        stream_write(s, &segm->compressed,        sizeof(uint32_t));
-        stream_write(s, &segm->offset,            sizeof(uint64_t));
-        stream_write(s, &segm->decompressed_size, sizeof(uint64_t));
-        stream_write(s, &segm->compressed_size,   sizeof(uint64_t));
-    }
-}
-
-
-/* Dumps the File entry for `cur` into the table at `s` and returns the
-   number of bytes written. */
-static uint64_t dump_file(struct stream *s, struct table_entry *cur) {
-    uint32_t magic         = FILE_MAGIC;
-    uint64_t bytes_written = 28 * cur->segment_count + 48;
-    stream_write(s, &magic,         sizeof(uint32_t));
-    stream_write(s, &bytes_written, sizeof(uint64_t));
-
-    dump_adlr(s, cur->key);
-    dump_time(s, cur->ctime);
-    dump_segm(s, cur);
-
-    stream_seek(s, -bytes_written, SEEK_CUR);
-    stream_write(s, &bytes_written, sizeof(uint64_t));
-    stream_seek(s, bytes_written, SEEK_CUR);
-    return bytes_written;
-}
-
-
-/* Dumps the eliF entry for `cur` into the table at `s` and returns the
-   number of bytes written. */
-static uint64_t dump_elif(struct stream *s, struct table_entry *cur) {
-    uint32_t  magic      = ELIF_MAGIC;
-    uint16_t  name_len   = strlen(cur->filename);
-    uint64_t  entry_size = name_len * 2 + 8;
-    char     *encoded    = malloc(name_len * 2 + 2);
-    utf16le_encode(cur->filename, encoded, name_len);
-
-    stream_write(s, &magic,      sizeof(uint32_t));
-    stream_write(s, &entry_size, sizeof(uint64_t));
-    stream_write(s, &cur->key,   sizeof(uint32_t));
-    stream_write(s, &name_len,   sizeof(uint16_t));
-    stream_write(s, encoded,     name_len * 2 + 2);
-    return 18 + name_len * 2 + 2;
-}
-
-
-/* Dumps the XP3 table specified by `root` into `s` and returns the
-   number of bytes written. */
-uint64_t dump_table(struct stream *s, struct table_entry *root) {
-    uint64_t bytes_written = 0;
-    struct table_entry *cur;
-    for (cur = root->next; cur != NULL; cur = cur->next) {
-        bytes_written += dump_elif(s, cur);
-        bytes_written += dump_file(s, cur);
-    }
-    stream_seek(s, 0, SEEK_SET);
-    return bytes_written;
 }
 
 

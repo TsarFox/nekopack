@@ -1,4 +1,0 @@
---style=java \
-        --indent-preproc-block \
-        --pad-oper --pad-comma --pad-header --unpad-paren \
-        --align-pointer=name

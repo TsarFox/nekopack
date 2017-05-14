@@ -61,6 +61,9 @@ void stream_read(void *dest, struct stream *s, size_t n);
    by `src`. The stream's cursor is advanced appropriately. */
 void stream_write(struct stream *s, void *src, size_t n);
 
+/* Concatenats the contents of `src` onto `dst`. */
+void stream_concat(struct stream *dst, struct stream *src, size_t n);
+
 /* Dumps the contents of `s` into the file specified by `fp`. */
 void stream_dump(FILE *fp, struct stream *s, size_t n);
 
