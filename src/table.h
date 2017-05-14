@@ -76,7 +76,7 @@ void entry_free(struct table_entry *cur);
 
 /* Dumps the XP3 table specified by `root` into `s` and returns the
    number of bytes written. */
-void dump_table(struct stream *s, struct table_entry *root);
+uint64_t dump_table(struct stream *s, struct table_entry *root);
 
 /* Inserts the file specified by `path` into the table linked list
    specified by `root`. */

@@ -243,7 +243,8 @@ static void dump_segm(struct stream *s, struct table_entry *cur) {
 /* Dumps the File entry for `cur` into the table at `s` and returns the
    number of bytes written. */
 static uint64_t dump_file(struct stream *s, struct table_entry *cur) {
-    uint32_t magic = FILE_MAGIC;
+    uint32_t magic         = FILE_MAGIC;
+    uint64_t bytes_written = 28 * cur->segment_count + 48;
     stream_write(s, &magic,         sizeof(uint32_t));
     stream_write(s, &bytes_written, sizeof(uint64_t));
 
@@ -254,7 +255,7 @@ static uint64_t dump_file(struct stream *s, struct table_entry *cur) {
     stream_seek(s, -bytes_written, SEEK_CUR);
     stream_write(s, &bytes_written, sizeof(uint64_t));
     stream_seek(s, bytes_written, SEEK_CUR);
-    return 28 * cur->segment_count + 48;
+    return bytes_written;
 }
 
 
