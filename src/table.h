@@ -60,9 +60,8 @@ void read_elif(struct stream *s, struct table_entry *root);
    in the archive's table section. */
 struct table_entry *read_table(struct stream *s);
 
-/* Dumps the XP3 table specified by `root` into `s` and returns the
-   number of bytes written. */
-uint64_t dump_table(struct stream *s, struct table_entry *root);
+/* Dumps the XP3 table specified by `root` into `s`. */
+void dump_table(struct stream *s, struct table_entry *root);
 
 /* Inserts the file specified by `path` into the table linked list
    specified by `root`. */

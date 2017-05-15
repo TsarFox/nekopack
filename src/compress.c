@@ -65,7 +65,7 @@ struct stream *stream_inflate(struct stream *s, size_t len,
 /* Deflates `s` into a newly allocated stream structure. */
 struct stream *stream_deflate(struct stream *s, size_t len) {
     struct stream *new = stream_new(len);
-    z_stream  strm;
+    z_stream       strm;
     strm.zalloc   = Z_NULL;
     strm.zfree    = Z_NULL;
     strm.opaque   = Z_NULL;
@@ -73,15 +73,15 @@ struct stream *stream_deflate(struct stream *s, size_t len) {
     if (deflateInit(&strm, LEVEL) != Z_OK)
         return NULL;
 
+    strm.avail_in = len;
+    strm.next_in  = (unsigned char *) s->_cur;
     do {
-        strm.avail_in = len;
-        strm.next_in  = (unsigned char *) s->_cur;
-        do {
-            strm.avail_out = len;
-            strm.next_out  = (unsigned char *) new->_cur;
-            deflate(&strm, Z_NO_FLUSH); // Flush param may cause issues.
-        } while (strm.avail_out == 0);
-    } while (0);
+        strm.avail_out = len;
+        strm.next_out  = (unsigned char *) new->_cur;
+        deflate(&strm, Z_NO_FLUSH); // Flush param may cause issues.
+    } while (strm.avail_out == 0);
+
+    new->len = len - strm.avail_out;
 
     deflateEnd(&strm);
     return new;

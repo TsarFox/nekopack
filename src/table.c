@@ -144,9 +144,8 @@ void read_file(struct stream *s, struct table_entry *root) {
 }
 
 
-/* Dumps the File entry for `cur` into the table at `s` and returns the
-   number of bytes written. */
-static uint64_t dump_file(struct stream *s, struct table_entry *cur) {
+/* Dumps the File entry for `cur` into the table at `s`. */
+static void dump_file(struct stream *s, struct table_entry *cur) {
     uint32_t magic         = FILE_MAGIC;
     uint64_t bytes_written = 28 * cur->segment_count + 48;
     stream_write(s, &magic,         sizeof(uint32_t));
@@ -159,7 +158,6 @@ static uint64_t dump_file(struct stream *s, struct table_entry *cur) {
     stream_seek(s, -bytes_written, SEEK_CUR);
     stream_write(s, &bytes_written, sizeof(uint64_t));
     stream_seek(s, bytes_written, SEEK_CUR);
-    return bytes_written;
 }
 
 
@@ -211,9 +209,8 @@ void read_elif(struct stream *s, struct table_entry *root) {
 }
 
 
-/* Dumps the eliF entry for `cur` into the table at `s` and returns the
-   number of bytes written. */
-static uint64_t dump_elif(struct stream *s, struct table_entry *cur) {
+/* Dumps the eliF entry for `cur` into the table at `s`. */
+static void dump_elif(struct stream *s, struct table_entry *cur) {
     uint32_t  magic      = ELIF_MAGIC;
     uint16_t  name_len   = strlen(cur->filename);
     uint64_t  entry_size = name_len * 2 + 8;
@@ -225,7 +222,6 @@ static uint64_t dump_elif(struct stream *s, struct table_entry *cur) {
     stream_write(s, &cur->key,   sizeof(uint32_t));
     stream_write(s, &name_len,   sizeof(uint16_t));
     stream_write(s, encoded,     name_len * 2 + 2);
-    return 18 + name_len * 2 + 2;
 }
 
 
@@ -260,17 +256,15 @@ struct table_entry *read_table(struct stream *s) {
 }
 
 
-/* Dumps the XP3 table specified by `root` into `s` and returns the
-   number of bytes written. */
-uint64_t dump_table(struct stream *s, struct table_entry *root) {
-    uint64_t bytes_written = 0;
+/* Dumps the XP3 table specified by `root` into `s`. */
+void dump_table(struct stream *s, struct table_entry *root) {
     struct table_entry *cur;
     for (cur = root->next; cur != NULL; cur = cur->next) {
-        bytes_written += dump_elif(s, cur);
-        bytes_written += dump_file(s, cur);
+        dump_elif(s, cur);
+        dump_file(s, cur);
     }
+    /* FIXME: This should be moved. */
     stream_seek(s, 0, SEEK_SET);
-    return bytes_written;
 }
 
 

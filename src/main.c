@@ -208,16 +208,16 @@ static void create_archive(char **paths, int argc, struct params p) {
         return;
     }
 
-    struct table_entry *root      = calloc(sizeof(struct table_entry), 1);
+    struct table_entry *root       = calloc(sizeof(struct table_entry), 1);
     struct table_entry *cur;
-    struct header      *h         = create_header();
-    struct stream      *data      = stream_new(1);
-    struct stream      *table     = stream_new(1);
+    struct header      *h          = create_header();
+    struct stream      *table_compressed, *data_compressed;
+    struct stream      *data       = stream_new(1);
+    struct stream      *table      = stream_new(1);
     struct stream      *file;
-    uint64_t            data_size = 0;
-    uint64_t            table_size;
+    uint64_t            data_size  = 0;
+    uint64_t            table_size = 0;
 
-    dump_header(fp, h);
     for (int i = 1; i < argc - p.vararg_index; i++) {
         file = stream_from_file(paths[i]);
         if (file == NULL) {
@@ -228,11 +228,34 @@ static void create_archive(char **paths, int argc, struct params p) {
         data_size += file->len;
         stream_concat(data, file, file->len);
         cur = add_file(root, paths[i]);
+        /* TODO: Separate into own function. */
+        table_size += 20 + strlen(cur->filename) * 2;
+        table_size += 28 * cur->segment_count + 48;
     }
-    stream_seek(data, 0, SEEK_SET);
-    stream_dump(fp, data, data_size);
-    table_size = dump_table(table, root);
-    stream_dump(fp, table, table_size);
+
+    h->table_size   = table_size;
+    h->table_offset = 40 + data_size;
+
+    dump_table(table, root);
+    
+    data_compressed  = stream_deflate(data,  data_size);
+    table_compressed = stream_deflate(table, table_size);
+    stream_free(data);
+    stream_free(table);
+
+    dump_header(fp, h);
+    /* FIXME: Formatting and this initial seek might not be necessary. */
+    stream_seek(data_compressed, 0, SEEK_SET);
+    stream_dump(fp, data_compressed, data_size);
+
+    /* FIXME: May be an incompatible value. Also, move this shitty hack. */
+    uint8_t  compressed = 0x80;
+    uint64_t len = table_compressed->len, decompressed_len = table_size;
+    fwrite(&compressed, sizeof(uint8_t), 1, fp);
+    fwrite(&len, sizeof(uint64_t), 1, fp);
+    fwrite(&decompressed_len, sizeof(uint64_t), 1, fp);
+    
+    stream_dump(fp, table_compressed, table_size);
 }
 
 
