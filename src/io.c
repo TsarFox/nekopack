@@ -26,45 +26,70 @@
 
 
 /* Allocates `len` bytes of non-zeroed memory and returns a new stream
-   structure pointing to it. */
+   structure pointing to it, or NULL if any allocations fail. The stream
+   returned is guaranteed to be positioned at the beginning. */
 struct stream *stream_new(size_t len) {
     struct stream *new = malloc(sizeof(struct stream));
-    new->len    = len;
+    if (new == NULL)
+        return NULL;
+
     new->_start = malloc(len);
-    new->_cur   = new->_start;
-    new->_loc   = HEAP;
+    if (new->_start == NULL)
+        return NULL;
+
+    new->_cur = new->_start;
+    new->len  = len;
+    new->_loc = HEAP;
     return new;
 }
 
 
-/* Copies `n` bytes from `s` into a new stream structure. */
+/* Copies `n` bytes from `s` into a new stream structure, returning NULL
+   if any allocations fail. The stream returned is guaranteed to be
+   positioned at the beginning. */
 struct stream *stream_clone(struct stream *s, size_t n) {
     struct stream *new = stream_new(n);
+    if (new == NULL)
+        return NULL;
+
     stream_write(new, s->_cur, n);
     stream_rewind(new);
     return new;
 }
 
 
-/* Maps the file at the given `path` into a stream structure. */
+/* Maps the file at the given `path` into a stream structure, returning
+   NULL if the path does not exist or if any allocations fail. The
+   stream returned is guaranteed to be positioned at the beginning. */
 struct stream *stream_from_file(char *path) {
     FILE *fp = fopen(path, "rb");
-    if (fp == NULL) return NULL;
+    if (fp == NULL)
+        return NULL;
+
     struct stream *new = malloc(sizeof(struct stream));
+    if (new == NULL)
+        return NULL;
+
     fseek(fp, 0, SEEK_END);
     new->len = ftell(fp);
     fseek(fp, 0, SEEK_SET);
+
     new->_start = malloc(new->len);
-    new->_cur = new->_start;
+    if (new->_start == NULL) {
+        free(new);
+        return NULL;
+    }
+
     fread(new->_start, new->len, 1, fp);
+    new->_cur = new->_start;
     new->_loc = HEAP;
     fclose(fp);
     return new;
 }
 
 
-/* Called to free or unmap the memory chunk associated with the given
-   stream, as well as the stream structure itself. */
+/* Called to free memory associated with the given stream, as well as
+   the stream structure itself. */
 void stream_free(struct stream *s) {
     switch (s->_loc) {
     case HEAP:
@@ -79,12 +104,6 @@ void stream_free(struct stream *s) {
 void stream_read(void *dest, struct stream *s, size_t n) {
     memcpy(dest, s->_cur, n);
     s->_cur += n;
-}
-
-
-/* Dumps the contents of `s` into the file specified by `fp`. */
-void stream_dump(FILE *fp, struct stream *s, size_t n) {
-    fwrite(s->_cur, n, 1, fp);
 }
 
 
@@ -105,9 +124,15 @@ void stream_write(struct stream *s, void *src, size_t n) {
 }
 
 
-/* Concatenats the contents of `src` onto `dst`. */
+/* Concatenates the contents of `src` onto `dst`. */
 void stream_concat(struct stream *dst, struct stream *src, size_t n) {
     stream_write(dst, src->_cur, n);
+}
+
+
+/* Dumps the contents of `s` into the file specified by `fp`. */
+void stream_dump(FILE *fp, struct stream *s, size_t n) {
+    fwrite(s->_cur, n, 1, fp);
 }
 
 
@@ -125,10 +150,10 @@ size_t stream_tell(struct stream *s) {
 }
 
 
-/* Sets the stream's position indicator to the given `pos`. If `whence`
-   is set to SEEK_SET, SEEK_CUR, or SEEK_END, the offset is relative to
-   the start of the file, the current position indicator, or
-   end-of-file, respectively. */
+/* Sets the stream's position indicator to the given `pos`. A `whence`
+   value of SEEK_SET indicates seeking relative to the beginning of the
+   file, SEEK_CUR indicates seeking relative to the current position,
+   and SEEK_END indicates seeking from the end of the file. */
 void stream_seek(struct stream *s, size_t pos, int whence) {
     switch (whence) {
     case SEEK_SET:

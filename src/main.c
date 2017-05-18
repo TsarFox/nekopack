@@ -17,6 +17,7 @@
    You should have received a copy of the GNU General Public License
    along with Nekopack. If not, see <http://www.gnu.org/licenses/>. */
 
+#include <errno.h>
 #include <sys/stat.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -33,23 +34,20 @@
 #define EXIT_FAILURE 1
 #define EXIT_SUCCESS 0
 
-#define VERSION_STR "2.1.0b1"
+#define NEKOPACK_VERSION "2.1.0b1"
 
 
-/* Writes usage information to stderr. */
 static void print_usage(char *progn) {
     fprintf(stderr, "Usage: %s [OPTIONS] (ARCHIVES) [PATHS]\n", progn);
 }
 
 
-/* Writes versioning information to stdout. */
 static void print_version(void) {
     printf("Nekopack version %s\nProgrammed by Jakob. "
-           "<http://jakob.space>\n", VERSION_STR);
+           "<http://jakob.space>\n", NEKOPACK_VERSION);
 }
 
 
-/* Writes help information to stdout. */
 static void print_help(void) {
     printf("A tool for decompressing the XP3 archives used by Nekopara.\n\n"
            "   -h, --help\t\tDisplay this help page and exit.\n"
@@ -69,7 +67,6 @@ static void print_help(void) {
 }
 
 
-/* Inflates the table according to information in the header. */
 static struct stream *load_table(struct stream *s) {
     uint8_t  compressed;
     uint64_t len, decompressed_len;
@@ -102,7 +99,7 @@ void make_dirs(char *path) {
 }
 
 
-/* Concatenates `name` and the output path specified in `p`. */
+/* Joins `name` and the output path specified in `p`. */
 static char *get_path(struct params p, char *name) {
     size_t  name_len = strlen(name);
     char   *path     = malloc(p.out_len + name_len + 2);
@@ -112,7 +109,6 @@ static char *get_path(struct params p, char *name) {
 }
 
 
-/* Prints the filename of the entry specified by `e` to stdout. */
 static void list(struct table_entry *e) {
     if (e->filename == NULL || e->segments == NULL) {
         fprintf(stderr, "Unpaired entries found. Archive may be corrupted.\n");
@@ -122,7 +118,6 @@ static void list(struct table_entry *e) {
 }
 
 
-/* Extracts the archive entry specified by `e` to disk. */
 static void extract(struct stream *s, struct table_entry *e, struct params p) {
     if (e->filename == NULL || e->segments == NULL) {
         fprintf(stderr, "Unpaired entries found. Archive may be corrupted.\n");
@@ -172,15 +167,31 @@ static void extract(struct stream *s, struct table_entry *e, struct params p) {
 static void map_entries(char *path, struct params p) {
     struct stream *archive = stream_from_file(path);
     if (archive == NULL) {
-        perror(path);
+        if (errno == ENOENT) {
+            perror(path);
+        } else {
+            fprintf(stderr, "Error allocating memory.\n");
+        }
         return;
     }
 
     struct header *h = read_header(archive);
+    if (h == NULL) {
+        fprintf(stderr, "File is not an XP3 archive.\n");
+        return;
+    }
     stream_seek(archive, h->table_offset, SEEK_SET);
 
-    struct stream      *table = load_table(archive);
-    struct table_entry *root  = read_table(table);
+    struct stream *table = load_table(archive);
+    if (table == NULL) {
+        fprintf(stderr, "Error allocating memory.\n");
+        return;
+    }
+    
+    struct table_entry *root = read_table(table);
+    if (root == NULL) {
+        fprintf(stderr, "Error allocating memory.\n");
+    }
 
     for (struct table_entry *cur = root->next; cur != NULL; cur = cur->next) {
         switch (p.mode) {
@@ -199,8 +210,9 @@ static void map_entries(char *path, struct params p) {
 }
 
 
-/* Creates a new XP3 archive at the first path specified by `paths`, and
-   flattens files specified by any following paths into the archive. */
+/* Creates a new XP3 archive. The destination of the archive is the
+   first string in `paths`, and the files at any following paths will be
+   flattened into the archive. */
 static void create_archive(char **paths, int argc, struct params p) {
     FILE *fp = fopen(paths[0], "wb+");
     if (fp == NULL) {
@@ -237,7 +249,7 @@ static void create_archive(char **paths, int argc, struct params p) {
     h->table_offset = 40 + data_size;
 
     dump_table(table, root);
-    
+
     data_compressed  = stream_deflate(data,  data_size);
     table_compressed = stream_deflate(table, table_size);
     stream_free(data);
@@ -254,7 +266,7 @@ static void create_archive(char **paths, int argc, struct params p) {
     fwrite(&compressed, sizeof(uint8_t), 1, fp);
     fwrite(&len, sizeof(uint64_t), 1, fp);
     fwrite(&decompressed_len, sizeof(uint64_t), 1, fp);
-    
+
     stream_dump(fp, table_compressed, table_size);
 }
 
@@ -264,7 +276,7 @@ int main(int argc, char **argv) {
     switch (p.mode) {
     case USAGE:
         print_usage(argv[0]);
-        params_free(p);
+        free(p.out);
         return EXIT_FAILURE;
     case VERSION:
         print_version();
@@ -280,6 +292,6 @@ int main(int argc, char **argv) {
     case CREATE:
         create_archive(argv + p.vararg_index, argc, p);
     }
-    params_free(p);
+    free(p.out);
     return EXIT_SUCCESS;
 }

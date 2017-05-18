@@ -41,11 +41,14 @@
 static void read_segm(struct stream *s, struct table_entry *tmp, uint64_t count) {
     tmp->segment_count = count;
     tmp->segments = malloc(sizeof(struct segment *) * count);
-    if (tmp->segments == NULL) return;
+    if (tmp->segments == NULL)
+        return;
 
     for (uint64_t i = 0; i < count; i++) {
         tmp->segments[i] = malloc(sizeof(struct segment));
-        if (tmp->segments[i] == NULL) return;
+        if (tmp->segments[i] == NULL)
+            return;
+
         stream_read(&tmp->segments[i]->compressed,        s, sizeof(uint32_t));
         stream_read(&tmp->segments[i]->offset,            s, sizeof(uint64_t));
         stream_read(&tmp->segments[i]->decompressed_size, s, sizeof(uint64_t));
@@ -108,10 +111,13 @@ static void dump_time(struct stream *s, uint64_t timestamp) {
    will be modified. Otherwise, a new entry will be created and appended
    to the linked list. */
 void read_file(struct stream *s, struct table_entry *root) {
-    bool               ended = false;
-    uint32_t           magic;
-    uint64_t           size;
+    bool                ended     = false;
+    uint32_t            magic;
+    uint64_t            size;
     struct table_entry *cur, *tmp = calloc(sizeof(struct table_entry), 1);
+
+    if (tmp == NULL)
+        return;
 
     do {
         stream_read(&magic, s, sizeof(uint32_t));
@@ -137,6 +143,11 @@ void read_file(struct stream *s, struct table_entry *root) {
     } while (!ended);
 
     cur = get_node(root, tmp->key);
+    if (cur == NULL) {
+        free(tmp);
+        return;
+    }
+
     cur->segment_count = tmp->segment_count;
     cur->segments = tmp->segments;
     cur->ctime = tmp->ctime;
@@ -179,14 +190,15 @@ void read_elif(struct stream *s, struct table_entry *root) {
     name_len = name_len * 2 + 2;
 
     cur = get_node(root, key);
-    if (cur->filename != NULL) {
+    if (cur == NULL || cur->filename != NULL) {
         return;
     }
 
     if (name_len < 0x100) {
         buf = malloc(name_len);
         name = malloc(name_len);
-        if (buf == NULL || name == NULL) return;
+        if (buf == NULL || name == NULL)
+            return;
 
         stream_read(buf, s, name_len);
         utf16le_decode(buf, name, name_len);
@@ -199,12 +211,13 @@ void read_elif(struct stream *s, struct table_entry *root) {
         }
         name = tmp;
     } else {
-        /* strdup isn't defined in ISO/IEC 9899:1999 C. */
         name = malloc(14);
-        if (name == NULL) return;
+        if (name == NULL)
+            return;
         strncpy(name, "COPYRIGHT.txt", 14);
         stream_seek(s, name_len, SEEK_CUR);
     }
+
     cur->filename = name;
 }
 
@@ -229,6 +242,8 @@ static void dump_elif(struct stream *s, struct table_entry *cur) {
    in the archive's table section. */
 struct table_entry *read_table(struct stream *s) {
     struct table_entry *root = calloc(sizeof(struct table_entry), 1);
+    if (root == NULL)
+        return NULL;
 
     bool     ended = false;
     uint32_t magic;
@@ -292,7 +307,9 @@ struct table_entry *get_node(struct table_entry *root, uint32_t key) {
     for (cur = root; cur != NULL && cur->key != key; cur = cur->next);
     if (cur == NULL) {
         cur = calloc(sizeof(struct table_entry), 1);
-        if (cur == NULL) return NULL;
+        if (cur == NULL)
+            return NULL;
+
         entry_append(root, cur);
         cur->key = key;
     }

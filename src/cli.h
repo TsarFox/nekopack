@@ -42,8 +42,4 @@ struct params {
     int     vararg_index;       /* Start index of paths in argv. */
 };
 
-/* Returns a params structure parsed from `argv`. */
 struct params parse_args(int argc, char **argv);
-
-/* Frees allocated memory associated with `p`. */
-void params_free(struct params p);

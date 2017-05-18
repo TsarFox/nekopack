@@ -78,7 +78,7 @@ struct stream *stream_deflate(struct stream *s, size_t len) {
     do {
         strm.avail_out = len;
         strm.next_out  = (unsigned char *) new->_cur;
-        deflate(&strm, Z_NO_FLUSH); // Flush param may cause issues.
+        deflate(&strm, Z_FINISH);
     } while (strm.avail_out == 0);
 
     new->len = len - strm.avail_out;

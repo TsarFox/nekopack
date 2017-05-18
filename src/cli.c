@@ -39,8 +39,6 @@ static void parse_output_path(const char *optarg, struct params *p) {
 }
 
 
-/* Updates the game field of `p` to properly reflect the game ID
-   specified by the string, `optarg`. */
 static void parse_game_id(const char *optarg, struct params *p) {
     if (!strcmp(optarg, "nekopara_volume_0"))
         p->game = NEKOPARA_VOLUME_0;
@@ -53,7 +51,6 @@ static void parse_game_id(const char *optarg, struct params *p) {
 }
 
 
-/* Returns a params structure parsed from `argv`. */
 struct params parse_args(int argc, char **argv) {
     /* getopt maintains external state which needs to be reset each time
        `parse_args` is called, otherwise strange things will occur. */
@@ -126,10 +123,4 @@ struct params parse_args(int argc, char **argv) {
     }
 
     return p;
-}
-
-
-/* Frees allocated memory associated with `p`. */
-void params_free(struct params p) {
-    free(p.out);
 }

@@ -40,17 +40,22 @@ struct stream {
 };
 
 /* Allocates `len` bytes of non-zeroed memory and returns a new stream
-   structure pointing to it. */
+   structure pointing to it, or NULL if any allocations fail. The stream
+   returned is guaranteed to be positioned at the beginning. */
 struct stream *stream_new(size_t len);
 
-/* Copies `n` bytes from `s` into a new stream structure. */
+/* Copies `n` bytes from `s` into a new stream structure, returning NULL
+   if any allocations fail. The stream returned is guaranteed to be
+   positioned at the beginning. */
 struct stream *stream_clone(struct stream *s, size_t n);
 
-/* Maps the file at the given `path` into a stream structure. */
+/* Maps the file at the given `path` into a stream structure, returning
+   NULL if the path does not exist or if any allocations fail. The
+   stream returned is guaranteed to be positioned at the beginning. */
 struct stream *stream_from_file(char *path);
 
-/* Called to free or unmap the memory chunk associated with the given
-   stream, as well as the stream structure itself. */
+/* Called to free memory associated with the given stream, as well as
+   the stream structure itself. */
 void stream_free(struct stream *s);
 
 /* Copies `n` bytes from the given stream into the memory area specified
@@ -61,7 +66,7 @@ void stream_read(void *dest, struct stream *s, size_t n);
    by `src`. The stream's cursor is advanced appropriately. */
 void stream_write(struct stream *s, void *src, size_t n);
 
-/* Concatenats the contents of `src` onto `dst`. */
+/* Concatenates the contents of `src` onto `dst`. */
 void stream_concat(struct stream *dst, struct stream *src, size_t n);
 
 /* Dumps the contents of `s` into the file specified by `fp`. */
@@ -74,7 +79,10 @@ void stream_xor(struct stream *s, uint8_t initial, uint8_t primary);
 /* Obtains the current value of the stream's position indicator. */
 size_t stream_tell(struct stream *s);
 
-/* Sets the stream's position indicator to the given `pos`. */
+/* Sets the stream's position indicator to the given `pos`. A `whence`
+   value of SEEK_SET indicates seeking relative to the beginning of the
+   file, SEEK_CUR indicates seeking relative to the current position,
+   and SEEK_END indicates seeking from the end of the file. */
 void stream_seek(struct stream *s, size_t pos, int whence);
 
 /* Sets the stream's position indicator to the beginning. */
