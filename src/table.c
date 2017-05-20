@@ -161,14 +161,9 @@ static void dump_file(struct stream *s, struct table_entry *cur) {
     uint64_t bytes_written = 28 * cur->segment_count + 48;
     stream_write(s, &magic,         sizeof(uint32_t));
     stream_write(s, &bytes_written, sizeof(uint64_t));
-
     dump_adlr(s, cur->key);
     dump_time(s, cur->ctime);
     dump_segm(s, cur);
-
-    stream_seek(s, -bytes_written, SEEK_CUR);
-    stream_write(s, &bytes_written, sizeof(uint64_t));
-    stream_seek(s, bytes_written, SEEK_CUR);
 }
 
 
@@ -224,12 +219,14 @@ void read_elif(struct stream *s, struct table_entry *root) {
 
 /* Dumps the eliF entry for `cur` into the table at `s`. */
 static void dump_elif(struct stream *s, struct table_entry *cur) {
-    uint32_t  magic      = ELIF_MAGIC;
-    uint16_t  name_len   = strlen(cur->filename);
-    uint64_t  entry_size = name_len * 2 + 8;
-    char     *encoded    = malloc(name_len * 2 + 2);
+    uint16_t  name_len = strlen(cur->filename);
+    char     *encoded  = malloc(name_len * 2 + 2);
+    if (encoded == NULL)
+        return;
     utf16le_encode(cur->filename, encoded, name_len);
 
+    uint32_t magic      = ELIF_MAGIC;
+    uint64_t entry_size = name_len * 2 + 8;
     stream_write(s, &magic,      sizeof(uint32_t));
     stream_write(s, &entry_size, sizeof(uint64_t));
     stream_write(s, &cur->key,   sizeof(uint32_t));
@@ -278,8 +275,6 @@ void dump_table(struct stream *s, struct table_entry *root) {
         dump_elif(s, cur);
         dump_file(s, cur);
     }
-    /* FIXME: This should be moved. */
-    stream_seek(s, 0, SEEK_SET);
 }
 
 
@@ -287,13 +282,18 @@ void dump_table(struct stream *s, struct table_entry *root) {
    specified by `root`. */
 struct table_entry *add_file(struct table_entry *root, char *path) {
     struct table_entry *new = calloc(sizeof(struct table_entry), 1);
+    if (new == NULL)
+        return NULL;
+
     size_t name_len = strlen(path);
     new->filename   = malloc(name_len);
-    strncpy(new->filename, path, name_len);
+    if (new->filename == NULL)
+        return NULL;
 
+    strncpy(new->filename, path, name_len);
     new->key   = 0xffffffff;
     new->ctime = 0;
-    new->segment_count = 0;
+    new->segment_count = 1;
     entry_append(root, new);
 
     return new;

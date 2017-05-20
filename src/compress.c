@@ -65,10 +65,13 @@ struct stream *stream_inflate(struct stream *s, size_t len,
 /* Deflates `s` into a newly allocated stream structure. */
 struct stream *stream_deflate(struct stream *s, size_t len) {
     struct stream *new = stream_new(len);
-    z_stream       strm;
-    strm.zalloc   = Z_NULL;
-    strm.zfree    = Z_NULL;
-    strm.opaque   = Z_NULL;
+    if (new == NULL)
+        return NULL;
+
+    z_stream strm;
+    strm.zalloc = Z_NULL;
+    strm.zfree  = Z_NULL;
+    strm.opaque = Z_NULL;
 
     if (deflateInit(&strm, LEVEL) != Z_OK)
         return NULL;

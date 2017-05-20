@@ -103,6 +103,9 @@ void make_dirs(char *path) {
 static char *get_path(struct params p, char *name) {
     size_t  name_len = strlen(name);
     char   *path     = malloc(p.out_len + name_len + 2);
+    if (path == NULL)
+        return NULL;
+
     strcpy(path, p.out);
     strcpy(path + p.out_len, name);
     return path;
@@ -125,6 +128,9 @@ static void extract(struct stream *s, struct table_entry *e, struct params p) {
     }
 
     char *path = get_path(p, e->filename);
+    if (path == NULL)
+        return;
+
     make_dirs(path);
 
     FILE           *fp        = fopen(path, "wb+");
@@ -187,7 +193,7 @@ static void map_entries(char *path, struct params p) {
         fprintf(stderr, "Error allocating memory.\n");
         return;
     }
-    
+
     struct table_entry *root = read_table(table);
     if (root == NULL) {
         fprintf(stderr, "Error allocating memory.\n");
@@ -214,21 +220,36 @@ static void map_entries(char *path, struct params p) {
    first string in `paths`, and the files at any following paths will be
    flattened into the archive. */
 static void create_archive(char **paths, int argc, struct params p) {
+    struct stream      *table_compressed, *file_compressed, *file;
+    struct table_entry *cur;
+
     FILE *fp = fopen(paths[0], "wb+");
     if (fp == NULL) {
         perror(paths[0]);
         return;
     }
 
-    struct table_entry *root       = calloc(sizeof(struct table_entry), 1);
-    struct table_entry *cur;
-    struct header      *h          = create_header();
-    struct stream      *table_compressed, *data_compressed;
-    struct stream      *data       = stream_new(1);
-    struct stream      *table      = stream_new(1);
-    struct stream      *file;
-    uint64_t            data_size  = 0;
-    uint64_t            table_size = 0;
+    struct table_entry *root = calloc(sizeof(struct table_entry), 1);
+    if (root == NULL) {
+        fprintf(stderr, "Error allocating memory.\n");
+        return;
+    }
+
+    struct header *h = create_header();
+    if (h == NULL) {
+        fprintf(stderr, "Error allocating memory.\n");
+        return;
+    }
+
+    struct stream *data  = stream_new(1);
+    struct stream *table = stream_new(1);
+    if (data == NULL || table == NULL) {
+        fprintf(stderr, "Error allocating memory.\n");
+        return;
+    }
+
+    uint64_t data_size  = 0;
+    uint64_t table_size = 0;
 
     for (int i = 1; i < argc - p.vararg_index; i++) {
         file = stream_from_file(paths[i]);
@@ -237,37 +258,70 @@ static void create_archive(char **paths, int argc, struct params p) {
             continue;
         }
 
-        data_size += file->len;
-        stream_concat(data, file, file->len);
+        file_compressed = stream_deflate(file, file->len);
+        if (file_compressed == NULL) {
+            fprintf(stderr, "Unable to compress data.\n");
+            return;
+        }
+
+        data_size += file_compressed->len;
+        stream_concat(data, file_compressed, file_compressed->len);
         cur = add_file(root, paths[i]);
+        if (cur == NULL) {
+            fprintf(stderr, "Error allocating memory.\n");
+            return;
+        }
+
         /* TODO: Separate into own function. */
         table_size += 20 + strlen(cur->filename) * 2;
-        table_size += 28 * cur->segment_count + 48;
-    }
+        table_size += 28 * cur->segment_count + 56;
 
-    h->table_size   = table_size;
-    h->table_offset = 40 + data_size;
+        cur->segments = malloc(sizeof(struct segment *));
+        if (cur->segments == NULL) {
+            fprintf(stderr, "Error allocating memory.\n");
+            return;
+        }
+
+        cur->segments[0] = malloc(sizeof(struct segment));
+        if (cur->segments[0] == NULL) {
+            fprintf(stderr, "Error allocating memory.\n");
+            return;
+        }
+
+        cur->segments[0]->compressed        = 1;
+        cur->segments[0]->offset            = 40 + data_size;
+        cur->segments[0]->decompressed_size = file->len;
+        cur->segments[0]->compressed_size   = file_compressed->len;
+
+        stream_free(file_compressed);
+        stream_free(file);
+    }
 
     dump_table(table, root);
 
-    data_compressed  = stream_deflate(data,  data_size);
+    stream_seek(table, 0, SEEK_SET);
     table_compressed = stream_deflate(table, table_size);
-    stream_free(data);
     stream_free(table);
+    if (table_compressed == NULL) {
+        fprintf(stderr, "Unable to compress data.\n");
+        return;
+    }
 
+    h->table_size   = data->len; // This isn't right <:^)
+    h->table_offset = 40 + data->len;
     dump_header(fp, h);
+
     /* FIXME: Formatting and this initial seek might not be necessary. */
-    stream_seek(data_compressed, 0, SEEK_SET);
-    stream_dump(fp, data_compressed, data_size);
+    stream_seek(data, 0, SEEK_SET);
+    stream_dump(fp, data, data->len);
 
     /* FIXME: May be an incompatible value. Also, move this shitty hack. */
-    uint8_t  compressed = 0x80;
-    uint64_t len = table_compressed->len, decompressed_len = table_size;
-    fwrite(&compressed, sizeof(uint8_t), 1, fp);
-    fwrite(&len, sizeof(uint64_t), 1, fp);
-    fwrite(&decompressed_len, sizeof(uint64_t), 1, fp);
+    uint8_t compressed = 1;
+    fwrite(&compressed,            sizeof(uint8_t),  1, fp);
+    fwrite(&table_compressed->len, sizeof(uint64_t), 1, fp);
+    fwrite(&table_size,            sizeof(uint64_t), 1, fp);
 
-    stream_dump(fp, table_compressed, table_size);
+    stream_dump(fp, table_compressed, table_compressed->len);
 }
 
 

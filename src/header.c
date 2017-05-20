@@ -66,7 +66,8 @@ struct header *read_header(struct stream *s) {
 /* Generates an XP3 header structure readable by Nekopara. */
 struct header *create_header(void) {
     struct header *h = malloc(sizeof(struct header));
-    if (h == NULL) return NULL;
+    if (h == NULL)
+        return NULL;
 
     memcpy(h->magic, XP3_MAGIC, 11);
     h->info_offset  = 17;
