@@ -5,12 +5,14 @@ endif
 CC := gcc
 LD := gcc
 
-CFLAGS = -Wall -Wextra -Os -g -std=c99 -pedantic
+CFLAGS = -Wall -Wextra -Os -std=c99 -pedantic -fstack-protector-all
+CFLAGS += $(USER_CFLAGS)
 ifeq ($(shell uname -s),OpenBSD)
 CFLAGS += -I/usr/local/include
 endif
 
 LDFLAGS = -lz
+LDFLAGS += $(USER_LDFLAGS)
 ifeq ($(shell uname -s),OpenBSD)
 LDFLAGS += -liconv -L/usr/local/lib
 endif
@@ -30,18 +32,22 @@ all: $(BINDIR)/nekopack
 
 $(BINDIR)/nekopack: $(OBJECTS) $(OBJDIR)/main.o
 	@mkdir -p $(BINDIR)
-	@$(LD) $(LDFLAGS) $(OBJECTS) $(OBJDIR)/main.o -o bin/nekopack
+	@echo "  LD    $(@:$(BINDIR)/%=%)"
+	@$(LD) $(CFLAGS) $(LDFLAGS) $(OBJECTS) $(OBJDIR)/main.o -o $(BINDIR)/nekopack
 
 $(BINDIR)/test: $(OBJECTS) $(TEST_OBJECTS)
 	@mkdir -p $(BINDIR)
-	@$(LD) $(LDFLAGS) $(OBJECTS) $(TEST_OBJECTS) -o $(BINDIR)/test
+	@echo "  LD    $(@:$(BINDIR)/%=%)"
+	@$(LD) $(CFLAGS) $(LDFLAGS) $(OBJECTS) $(TEST_OBJECTS) -o $(BINDIR)/test
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	@mkdir -p $(OBJDIR)
+	@echo "  CC    $(@:$(OBJDIR)/%=%)"
 	@$(CC) $(CFLAGS) -c -o $@ $(SRCDIR)/$*.c
 
 $(OBJDIR)/%.o: $(TSTDIR)/%.c
 	@mkdir -p $(OBJDIR)
+	@echo "  CC    $(@:$(OBJDIR)/%=%)"
 	@$(CC) $(CFLAGS) -c -o $@ -I $(SRCDIR) $(TSTDIR)/$*.c
 
 test: bin/test

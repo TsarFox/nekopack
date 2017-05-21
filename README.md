@@ -14,8 +14,11 @@ Nekopack can be compiled on Linux by running `make` from the repository's root d
 
 The test suite is run with `make test` or `gmake test`, depending on your platform.
 
+You can add specific flags to the Makefile with `USER_CFLAGS` and/or `USER_LDFLAGS`.
+
 
 ## TODO
 * Full unit testing.
 * Clean up `main.c`, move functions like `load_table` and `make_dirs` into more appropriate files.
 * Strict warnings.
+
