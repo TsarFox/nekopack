@@ -1,4 +1,4 @@
-/* main.c -- Command-line entry point to the Nekopack.
+/* main.c -- Entry point to the program.
 
    Copyright (C) 2017 Jakob Kreuze, All Rights Reserved.
 
@@ -33,38 +33,6 @@
 
 #define EXIT_FAILURE 1
 #define EXIT_SUCCESS 0
-
-#define NEKOPACK_VERSION "2.1.0b1"
-
-
-static void print_usage(char *progn) {
-    fprintf(stderr, "Usage: %s [OPTIONS] (ARCHIVES) [PATHS]\n", progn);
-}
-
-
-static void print_version(void) {
-    printf("Nekopack version %s\nProgrammed by Jakob. "
-           "<http://jakob.space>\n", NEKOPACK_VERSION);
-}
-
-
-static void print_help(void) {
-    printf("A tool for decompressing the XP3 archives used by Nekopara.\n\n"
-           "   -h, --help\t\tDisplay this help page and exit.\n"
-           "   -v, --version\tDisplay the currently installed version and "
-           "exit.\n\n"
-           "   -e, --extract\tExtract the contents of the archive. This is "
-           "the default\n\t\t\taction if no mode argument is provided.\n"
-           "   -l, --list\t\tList the contents of the archive.\n"
-           "   -c, --create\t\tCreate a new XP3 archive.\n\n"
-           "   -o, --output\t\tPath to extract files to.\n"
-           "   -g, --game\t\tGame the archive is from. Required for file "
-           "decryption.\n"
-           "   -q, --quiet\t\tDon't display information about extracted "
-           "files.\n\n"
-           "Supported games: nekopara_volume_0, nekopara_volume_0_steam,\n"
-           "nekopara_volume_1, nekopara_volume_1_steam\n");
-}
 
 
 static struct stream *load_table(struct stream *s) {
@@ -168,8 +136,9 @@ static void extract(struct stream *s, struct table_entry *e, struct params p) {
 }
 
 
-/* Loads an XP3 archive and maps the function associated to the current
-   mode of operation to every entry. */
+/* General means of interacting with the files stored in an XP3 archive.
+   Loads the archive and maps to every entry the function associated to
+   the current mode of operation. */
 static void map_entries(char *path, struct params p) {
     struct stream *archive = stream_from_file(path);
     if (archive == NULL) {
@@ -186,6 +155,7 @@ static void map_entries(char *path, struct params p) {
         fprintf(stderr, "File is not an XP3 archive.\n");
         return;
     }
+
     stream_seek(archive, h->table_offset, SEEK_SET);
 
     struct stream *table = load_table(archive);
@@ -218,7 +188,7 @@ static void map_entries(char *path, struct params p) {
 
 /* Creates a new XP3 archive. The destination of the archive is the
    first string in `paths`, and the files at any following paths will be
-   flattened into the archive. */
+   compressed and inserted into the archive. */
 static void create_archive(char **paths, int argc, struct params p) {
     struct stream      *table_compressed, *file_compressed, *file;
     struct table_entry *cur;
@@ -264,7 +234,6 @@ static void create_archive(char **paths, int argc, struct params p) {
             return;
         }
 
-        data_size += file_compressed->len;
         stream_concat(data, file_compressed, file_compressed->len);
         cur = add_file(root, paths[i]);
         if (cur == NULL) {
@@ -292,6 +261,8 @@ static void create_archive(char **paths, int argc, struct params p) {
         cur->segments[0]->offset            = 40 + data_size;
         cur->segments[0]->decompressed_size = file->len;
         cur->segments[0]->compressed_size   = file_compressed->len;
+
+        data_size += file_compressed->len;
 
         stream_free(file_compressed);
         stream_free(file);
@@ -332,20 +303,25 @@ int main(int argc, char **argv) {
         print_usage(argv[0]);
         free(p.out);
         return EXIT_FAILURE;
+
     case VERSION:
         print_version();
         break;
+
     case HELP:
         print_help();
         break;
+
     case LIST:
     case EXTRACT:
         for (int i = p.vararg_index; i < argc; i++)
             map_entries(argv[i], p);
         break;
+
     case CREATE:
         create_archive(argv + p.vararg_index, argc, p);
     }
+
     free(p.out);
     return EXIT_SUCCESS;
 }

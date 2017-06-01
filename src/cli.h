@@ -43,3 +43,6 @@ struct params {
 };
 
 struct params parse_args(int argc, char **argv);
+void print_usage(char *progn);
+void print_version(void);
+void print_help(void);
