@@ -70,7 +70,7 @@ struct header *create_header(void) {
         return NULL;
 
     memcpy(h->magic, XP3_MAGIC, 11);
-    h->info_offset  = 17;
+    h->info_offset  = 0x17;
     h->version      = 1;
     h->flags        = 0x80;
     h->table_size   = 0;

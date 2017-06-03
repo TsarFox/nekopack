@@ -66,6 +66,9 @@ void stream_read(void *dest, struct stream *s, size_t n);
    by `src`. The stream's cursor is advanced appropriately. */
 void stream_write(struct stream *s, void *src, size_t n);
 
+/* Increases the length of `s` by `n` bytes. */
+void stream_expand(struct stream *s, size_t n);
+
 /* Concatenates the contents of `src` onto `dst`. */
 void stream_concat(struct stream *dst, struct stream *src, size_t n);
 

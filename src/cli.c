@@ -78,6 +78,7 @@ struct params parse_args(int argc, char **argv) {
         {"extract", no_argument, NULL, 'e'},
         {"list", no_argument, NULL, 'l'},
         {"create", no_argument, NULL, 'c'},
+        {"debug", no_argument, NULL, 'd'},
         {"output", no_argument, NULL, 'o'},
         {"game", no_argument, NULL, 'g'},
         {NULL, 0, NULL, 0}
@@ -85,7 +86,7 @@ struct params parse_args(int argc, char **argv) {
 
     do {
         count++;
-        cur = getopt_long(argc, argv, "hVvelcqo:g:", long_opts, &opt_index);
+        cur = getopt_long(argc, argv, "hVvelcdqo:g:", long_opts, &opt_index);
         switch (cur) {
         case 'h':
             p.mode = HELP;
@@ -119,6 +120,10 @@ struct params parse_args(int argc, char **argv) {
 
         case 'c':
             p.mode = CREATE;
+            break;
+
+        case 'd':
+            p.mode = DEBUG;
         }
     } while (cur >= 0);
 
@@ -126,6 +131,7 @@ struct params parse_args(int argc, char **argv) {
         p.mode = USAGE;
         return p;
     }
+
     p.vararg_index = count;
 
     if (p.out == NULL) {
@@ -157,7 +163,8 @@ void print_help(void) {
            "   -e, --extract\tExtract the contents of the archive. This is "
            "the default\n\t\t\taction if no mode argument is provided.\n"
            "   -l, --list\t\tList the contents of the archive.\n"
-           "   -c, --create\t\tCreate a new XP3 archive.\n\n"
+           "   -c, --create\t\tCreate a new XP3 archive.\n"
+           "   -d, --debug\t\tDisplay the archive's table and metadata.\n\n"
            "   -o, --output\t\tPath to extract files to.\n"
            "   -g, --game\t\tGame the archive is from. Required for file "
            "decryption.\n"

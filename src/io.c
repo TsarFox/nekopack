@@ -110,17 +110,22 @@ void stream_read(void *dest, struct stream *s, size_t n) {
 /* Copies `n` bytes into the given stream from the memory area specified
    by `src`. The stream's cursor is advanced appropriately. */
 void stream_write(struct stream *s, void *src, size_t n) {
-    while (s->_cur + n > s->_start + s->len) {
-        ptrdiff_t dist = (uintptr_t) s->_cur - (uintptr_t) s->_start;
-        switch(s->_loc) {
-        case HEAP:
-            s->len   *= 2;
-            s->_start = realloc(s->_start, s->len);
-            s->_cur   = s->_start + dist;
-        }
-    }
+    while (s->_cur + n > s->_start + s->len)
+        stream_expand(s, s->len);
     memcpy(s->_cur, src, n);
     s->_cur += n;
+}
+
+
+/* Increases the length of `s` by `n` bytes. */
+void stream_expand(struct stream *s, size_t n) {
+    ptrdiff_t dist = (uintptr_t) s->_cur - (uintptr_t) s->_start;
+    switch(s->_loc) {
+    case HEAP:
+        s->len   += n;
+        s->_start = realloc(s->_start, s->len);
+        s->_cur   = s->_start + dist;
+    }
 }
 
 

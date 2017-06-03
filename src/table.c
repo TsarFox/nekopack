@@ -246,6 +246,10 @@ struct table_entry *read_table(struct stream *s) {
     uint32_t magic;
     uint64_t size;
 
+    FILE *fp = fopen("/tmp/dump.bin", "wb+");
+    stream_dump(fp, s, s->len);
+    fclose(fp);
+
     do {
         stream_read(&magic, s, sizeof(uint32_t));
         stream_read(&size, s, sizeof(uint64_t));
@@ -286,12 +290,13 @@ struct table_entry *add_file(struct table_entry *root, char *path) {
         return NULL;
 
     size_t name_len = strlen(path);
-    new->filename   = malloc(name_len);
+    new->filename   = malloc(name_len + 1);
     if (new->filename == NULL)
         return NULL;
 
-    strncpy(new->filename, path, name_len);
-    new->key   = 0xffffffff;
+    strncpy(new->filename, path, name_len + 1);
+    /* TODO: Replace this with something more deterministic. */
+    new->key   = rand();
     new->ctime = 0;
     new->segment_count = 1;
     entry_append(root, new);

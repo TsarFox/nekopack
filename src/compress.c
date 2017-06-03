@@ -82,9 +82,17 @@ struct stream *stream_deflate(struct stream *s, size_t len) {
         strm.avail_out = len;
         strm.next_out  = (unsigned char *) new->_cur;
         deflate(&strm, Z_FINISH);
+
+        /* This means that the compressed data is larger than the
+           decompressed, and that the buffer needs to be expanded. */
+        if (strm.avail_out == 0) {
+            new->_cur += len;
+            stream_expand(new, s->len);
+        }
     } while (strm.avail_out == 0);
 
-    new->len = len - strm.avail_out;
+    new->len -= strm.avail_out;
+    new->_cur = new->_start;
 
     deflateEnd(&strm);
     return new;
