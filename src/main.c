@@ -17,7 +17,6 @@
    You should have received a copy of the GNU General Public License
    along with Nekopack. If not, see <http://www.gnu.org/licenses/>. */
 
-#include <inttypes.h> /* Only used for debug mode. */
 #include <errno.h>
 #include <sys/stat.h>
 #include <stdint.h>
@@ -34,9 +33,6 @@
 
 #define EXIT_FAILURE 1
 #define EXIT_SUCCESS 0
-
-#define ANSI_TITLE "\x1b[36m\x1b[4m"
-#define ANSI_END   "\x1b[0m"
 
 
 static struct stream *load_table(struct stream *s) {
@@ -245,7 +241,6 @@ static void create_archive(char **paths, int argc, struct params p) {
             return;
         }
 
-        /* TODO: Separate into own function. */
         table_size += 20 + strlen(cur->filename) * 2;
         table_size += 28 * cur->segment_count + 60;
 
@@ -286,49 +281,15 @@ static void create_archive(char **paths, int argc, struct params p) {
     h->table_offset = 40 + data->len;
     dump_header(fp, h);
 
-    /* FIXME: Formatting and this initial seek might not be necessary. */
     stream_seek(data, 0, SEEK_SET);
     stream_dump(fp, data, data->len);
 
-    /* FIXME: May be an incompatible value. Also, move this shitty hack. */
     uint8_t compressed = 1;
     fwrite(&compressed,            sizeof(uint8_t),  1, fp);
     fwrite(&table_compressed->len, sizeof(uint64_t), 1, fp);
     fwrite(&table_size,            sizeof(uint64_t), 1, fp);
 
     stream_dump(fp, table_compressed, table_compressed->len);
-}
-
-
-/* The name is not particularly fitting to its function. */
-static void display_table(char *path, struct params p) {
-    /* Replicated code. Could this be in map_entries? */
-    struct stream *archive = stream_from_file(path);
-    if (archive == NULL) {
-        if (errno == ENOENT) {
-            perror(path);
-        } else {
-            fprintf(stderr, "Error allocating memory.\n");
-        }
-        return;
-    }
-
-    struct header *h = read_header(archive);
-    if (h == NULL) {
-        fprintf(stderr, "File is not an XP3 archive.\n");
-        return;
-    }
-
-    printf(ANSI_TITLE "Archive Header\n" ANSI_END);
-    printf("Magic: ");
-    for (int i = 0; i < 11; i++)
-        printf("%x", h->magic[i]);
-    printf("\n");
-    printf("Info Offset: 0x%"PRIx64"\n", h->info_offset);
-    printf("Version: 0x%"PRIx32"\n", h->version);
-    printf("Flags: 0x%"PRIx8"\n", h->flags);
-    printf("Table Size: 0x%"PRIx64"\n", h->table_size);
-    printf("Table Offset: 0x%"PRIx64"\n", h->table_offset);
 }
 
 
@@ -352,11 +313,6 @@ int main(int argc, char **argv) {
     case EXTRACT:
         for (int i = p.vararg_index; i < argc; i++)
             map_entries(argv[i], p);
-        break;
-
-    case DEBUG:
-        for (int i = p.vararg_index; i < argc; i++)
-            display_table(argv[i], p);
         break;
 
     case CREATE:

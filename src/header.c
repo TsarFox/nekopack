@@ -39,6 +39,22 @@ static bool is_supported(struct header *h) {
 }
 
 
+/* Generates an XP3 header structure readable by Nekopara. */
+struct header *create_header(void) {
+    struct header *h = malloc(sizeof(struct header));
+    if (h == NULL)
+        return NULL;
+
+    memcpy(h->magic, XP3_MAGIC, 11);
+    h->info_offset  = 0x17;
+    h->version      = 1;
+    h->flags        = 0x80;
+    h->table_size   = 0;
+    h->table_offset = 0;
+    return h;
+}
+
+
 /* Reads from the given stream into a newly allocated header structure.
    NULL is returned if the header contains an invalid magic number, or
    if the archive's version is not supported. */
@@ -59,22 +75,6 @@ struct header *read_header(struct stream *s) {
         free(h);
         return NULL;
     }
-    return h;
-}
-
-
-/* Generates an XP3 header structure readable by Nekopara. */
-struct header *create_header(void) {
-    struct header *h = malloc(sizeof(struct header));
-    if (h == NULL)
-        return NULL;
-
-    memcpy(h->magic, XP3_MAGIC, 11);
-    h->info_offset  = 0x17;
-    h->version      = 1;
-    h->flags        = 0x80;
-    h->table_size   = 0;
-    h->table_offset = 0;
     return h;
 }
 

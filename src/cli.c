@@ -26,15 +26,20 @@
 #include "cli.h"
 #include "crypto.h"
 
-#define NEKOPACK_VERSION "2.1.0b1"
+#define NEKOPACK_VERSION "2.1.0"
 
 
-/* Copies `optarg` into the out field of `p` and ensures that it ends in
-   a trailing path delimiter. */
+/* Copies `optarg` into the out member of `p` and ensures that it has a
+   trailing path delimiter. */
 static void parse_output_path(const char *optarg, struct params *p) {
     p->out_len = strlen(optarg);
     p->out     = malloc(p->out_len + 2);
+
+    if (p->out == NULL)
+        return;
+
     strcpy(p->out, optarg);
+
     if (p->out[p->out_len - 1] != '/') {
         p->out[p->out_len]  = '/';
         p->out_len         += 1;
@@ -78,7 +83,6 @@ struct params parse_args(int argc, char **argv) {
         {"extract", no_argument, NULL, 'e'},
         {"list", no_argument, NULL, 'l'},
         {"create", no_argument, NULL, 'c'},
-        {"debug", no_argument, NULL, 'd'},
         {"output", no_argument, NULL, 'o'},
         {"game", no_argument, NULL, 'g'},
         {NULL, 0, NULL, 0}
@@ -86,7 +90,7 @@ struct params parse_args(int argc, char **argv) {
 
     do {
         count++;
-        cur = getopt_long(argc, argv, "hVvelcdqo:g:", long_opts, &opt_index);
+        cur = getopt_long(argc, argv, "hVvelcqo:g:", long_opts, &opt_index);
         switch (cur) {
         case 'h':
             p.mode = HELP;
@@ -120,10 +124,6 @@ struct params parse_args(int argc, char **argv) {
 
         case 'c':
             p.mode = CREATE;
-            break;
-
-        case 'd':
-            p.mode = DEBUG;
         }
     } while (cur >= 0);
 

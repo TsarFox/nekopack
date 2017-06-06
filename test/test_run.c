@@ -22,6 +22,7 @@
 #include "minunit.h"
 
 #include "test_cli.h"
+#include "test_compress.h"
 #include "test_crypto.h"
 #include "test_encoding.h"
 #include "test_header.h"
@@ -35,6 +36,8 @@ static char *run_all_tests(void) {
     mu_run_test(test_out_path);
     mu_run_test(test_vararg_index);
     mu_run_test(test_game_id);
+    mu_run_test(test_compress);
+    mu_run_test(test_decompress);
     mu_run_test(test_derive_initial);
     mu_run_test(test_derive_primary);
     mu_run_test(test_stream_obj);

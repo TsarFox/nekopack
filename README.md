@@ -18,7 +18,8 @@ You can add specific flags to the Makefile with `USER_CFLAGS` and/or `USER_LDFLA
 
 
 ## TODO
-* Full unit testing.
+* Full unit testing, test static functions.
 * Clean up `main.c`, move functions like `load_table` and `make_dirs` into more appropriate files.
+* Clean up `create_archive`.
 * Strict warnings.
-
+* Game-compatible file encryption on created archives.

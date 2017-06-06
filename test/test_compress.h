@@ -1,4 +1,4 @@
-/* compress.h -- Wrappers for compression and decompression with zlib.
+/* test_compress.h -- MinUnit test cases for compress.c
 
    Copyright (C) 2017 Jakob Kreuze, All Rights Reserved.
 
@@ -19,15 +19,5 @@
 
 #pragma once
 
-#include "io.h"
-
-/* Inflates `len` bytes from the current position of `s` to a new stream
-   structure of size `decompressed_len` bytes. Stream inflation will not
-   work if `decompressed_len` does not represent the actual size of the
-   original data. */
-struct stream *stream_inflate(struct stream *s, size_t len,
-                              size_t decompressed_len);
-
-/* Deflates `len` bytes from the current position of `s` to a new stream
-   structure, where the `len` member represents the decompressed size. */
-struct stream *stream_deflate(struct stream *s, size_t len);
+char *test_compress(void);
+char *test_decompress(void);

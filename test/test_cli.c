@@ -37,19 +37,19 @@ char *test_out_path(void) {
 }
 
 
-char *test_vararg_index(void) {
-    char *argv[]    = {"nekopack", "-l", "a.xp3"};
-    struct params p = parse_args(3, argv);
-    mu_assert("Invalid vararg index", !strcmp("a.xp3", argv[p.vararg_index]));
+char *test_game_id(void) {
+    char *argv[]    = {"nekopack", "-g", "nekopara_volume_1", "a.xp3"};
+    struct params p = parse_args(4, argv);
+    mu_assert("Incorrect game ID", p.game == NEKOPARA_VOLUME_1);
     free(p.out);
     return NULL;
 }
 
 
-char *test_game_id(void) {
-    char *argv[]    = {"nekopack", "-g", "nekopara_volume_1", "a.xp3"};
-    struct params p = parse_args(4, argv);
-    mu_assert("Incorrect game ID", p.game == NEKOPARA_VOLUME_1);
+char *test_vararg_index(void) {
+    char *argv[]    = {"nekopack", "-l", "a.xp3"};
+    struct params p = parse_args(3, argv);
+    mu_assert("Invalid vararg index", !strcmp("a.xp3", argv[p.vararg_index]));
     free(p.out);
     return NULL;
 }

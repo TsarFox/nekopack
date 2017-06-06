@@ -30,7 +30,6 @@ enum {
     LIST,
     EXTRACT,
     CREATE,
-    DEBUG,
 };
 
 /* Structure for storing options set from the command-line. */
