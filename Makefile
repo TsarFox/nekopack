@@ -33,12 +33,12 @@ all: $(BINDIR)/nekopack
 $(BINDIR)/nekopack: $(OBJECTS) $(OBJDIR)/main.o
 	@mkdir -p $(BINDIR)
 	@echo "  LD    $(@:$(BINDIR)/%=%)"
-	@$(LD) $(CFLAGS) $(LDFLAGS) $(OBJECTS) $(OBJDIR)/main.o -o $(BINDIR)/nekopack
+	@$(LD) $(CFLAGS) $(OBJECTS) $(OBJDIR)/main.o -o $(BINDIR)/nekopack $(LDFLAGS)
 
 $(BINDIR)/test: $(OBJECTS) $(TEST_OBJECTS)
 	@mkdir -p $(BINDIR)
 	@echo "  LD    $(@:$(BINDIR)/%=%)"
-	@$(LD) $(CFLAGS) $(LDFLAGS) $(OBJECTS) $(TEST_OBJECTS) -o $(BINDIR)/test
+	@$(LD) $(CFLAGS) $(OBJECTS) $(TEST_OBJECTS) -o $(BINDIR)/test $(LDFLAGS)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	@mkdir -p $(OBJDIR)

@@ -1,0 +1,12 @@
+addons:
+  apt:
+    packages:
+      - zlib1g-dev
+
+language: c
+
+compiler:
+  - gcc
+  - clang
+
+script: make test
