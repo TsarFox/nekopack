@@ -1,5 +1,7 @@
 # ![Nekopack](https://raw.github.com/TsarFox/nekopack/master/Nekopack_Logo.png "Nekopack")
 ## Software programmed and maintained by [Jakob.](http://jakob.space/)
+[![Build Status](https://travis-ci.org/TsarFox/nekopack.svg?branch=master)](https://travis-ci.org/TsarFox/nekopack)
+
 Nekopack is a work-in-progress attempt at reverse engineering the archive format used by Nekopara.
 
 Please use this software responsibly. I chose to develop and release this because I see it as a very valuable teaching tool in accompaniment to my writeup, and I think that people who legally purchased Nekopara should have the right to view the game's content. I do not condone piracy or the redistribution of copyrighted materials in any way, shape, or form.
