@@ -156,6 +156,10 @@ static void map_entries(char *path, struct params p) {
         return;
     }
 
+    if (h->table_offset > archive->len) {
+        fprintf(stderr, "Invalid table offset. Archive corrupt.\n");
+        return;
+    }
     stream_seek(archive, h->table_offset, SEEK_SET);
 
     struct stream *table = load_table(archive);

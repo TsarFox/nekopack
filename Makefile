@@ -50,10 +50,10 @@ $(OBJDIR)/%.o: $(TSTDIR)/%.c
 	@echo "  CC    $(@:$(OBJDIR)/%=%)"
 	@$(CC) $(CFLAGS) -c -o $@ -I $(SRCDIR) $(TSTDIR)/$*.c
 
-test: bin/test
-	@bin/test
+test: $(BINDIR)/test
+	@$(BINDIR)/test
 
 clean:
-	rm -f bin/* obj/*
+	rm -f $(BINDIR)/* $(OBJDIR)/*
 
-.PHONY: clean test
+.PHONY: all clean test

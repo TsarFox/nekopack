@@ -44,6 +44,8 @@ struct stream *stream_inflate(struct stream *s, size_t len,
 
     int ret;
     struct stream *new = stream_new(decompressed_len);
+    if (new == NULL)
+        return NULL;
 
     do {
         strm.avail_in = len;
