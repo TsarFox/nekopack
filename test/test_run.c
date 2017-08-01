@@ -20,7 +20,6 @@
 #include <stdio.h>
 
 #include "minunit.h"
-
 #include "test_cli.h"
 #include "test_compress.h"
 #include "test_crypto.h"
@@ -29,10 +28,16 @@
 #include "test_io.h"
 #include "test_table.h"
 
+#define ANSI_RED   "\033[31m"
+#define ANSI_GREEN "\033[32m"
+#define ANSI_BLUE  "\033[34m"
+#define ANSI_BLINK "\033[5m"
+#define ANSI_END   "\033[0m"
+
 int tests_run = 0;
 
 
-static char *run_all_tests(void) {
+static const char *all_tests(void) {
     mu_run_test(test_out_path);
     mu_run_test(test_vararg_index);
     mu_run_test(test_game_id);
@@ -58,11 +63,17 @@ static char *run_all_tests(void) {
 
 
 int main(void) {
-    char *ret = run_all_tests();
-    if (ret) {
-        printf("%s\n", ret);
+    const char *res;
+
+    printf("Test suite started.\n\n");
+    res = all_tests();
+
+    if (res != NULL) {
+        printf(ANSI_RED "Test failed! " ANSI_END "\"%s\"\n", res);
         return 1;
     }
-    printf("Successful tests: %d\n", tests_run);
+
+    printf(ANSI_GREEN "Test suite finished successfully.\n" ANSI_END);
+    printf(ANSI_BLUE "%d tests were run.\n" ANSI_END, tests_run);
     return 0;
 }

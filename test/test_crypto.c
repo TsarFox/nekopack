@@ -20,22 +20,24 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "minunit.h"
-
 #include "crypto.h"
+
+#include "minunit.h"
 
 extern int tests_run;
 
 
-char *test_derive_initial(void) {
+const char *test_derive_initial(void) {
     struct game_key k = get_key(NEKOPARA_VOLUME_0);
-    mu_assert("Initial key failure", derive_initial(k, 0xdeadbeefcafebabe) == 0x22);
+    mu_assert("[crypto] test_derive_initial: Initial key failure",
+              derive_initial(k, 0xdeadbeefcafebabe) == 0x22);
     return NULL;
 }
 
 
-char *test_derive_primary(void) {
+const char *test_derive_primary(void) {
     struct game_key k = get_key(NEKOPARA_VOLUME_1);
-    mu_assert("Initial key failure", derive_primary(k, 0xdeadbeefcafebabe) == 0x13);
+    mu_assert("[crypto] test_derive_primary: Initial key failure",
+              derive_primary(k, 0xdeadbeefcafebabe) == 0x13);
     return NULL;
 }

@@ -19,10 +19,11 @@
 
 #include <stdbool.h>
 
-#include "minunit.h"
-
 #include "compress.h"
 #include "io.h"
+
+#include "minunit.h"
+
 
 extern int tests_run;
 
@@ -42,13 +43,15 @@ static bool streams_eq(struct stream *a, struct stream *b) {
 }
 
 
-char *test_compress(void) {
+const char *test_compress(void) {
     struct stream *s        = stream_from_file("test/vectors/test.png");
     struct stream *expected = stream_from_file("test/vectors/test.bin");
-    mu_assert("Could not open test vectors", s != NULL && expected != NULL);
+    mu_assert("[compress] test_compress: Could not open test vectors",
+              s != NULL && expected != NULL);
 
     struct stream *res = stream_deflate(s, s->len);
-    mu_assert("Expected compression not met", streams_eq(res, expected));
+    mu_assert("[compress] test_compress: Expected compression not met",
+              streams_eq(res, expected));
 
     stream_free(s);
     stream_free(expected);
@@ -57,13 +60,15 @@ char *test_compress(void) {
 }
 
 
-char *test_decompress(void) {
+const char *test_decompress(void) {
     struct stream *s        = stream_from_file("test/vectors/test.bin");
     struct stream *expected = stream_from_file("test/vectors/test.png");
-    mu_assert("Could not open test vectors", s != NULL && expected != NULL);
+    mu_assert("[compress] test_decompress: Could not open test vectors",
+              s != NULL && expected != NULL);
 
     struct stream *res = stream_inflate(s, s->len, 176608);
-    mu_assert("Expected compression not met", streams_eq(res, expected));
+    mu_assert("[compress] test_decompress: Expected compression not met",
+              streams_eq(res, expected));
 
     stream_free(s);
     stream_free(expected);

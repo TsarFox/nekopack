@@ -20,36 +20,39 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "minunit.h"
-
 #include "cli.h"
 #include "crypto.h"
+
+#include "minunit.h"
 
 extern int tests_run;
 
 
-char *test_out_path(void) {
+const char *test_out_path(void) {
     char *argv[]    = {"nekopack", "-o", "/tmp", "a.xp3"};
     struct params p = parse_args(4, argv);
-    mu_assert("Trailing slash not appended to path", !strcmp(p.out, "/tmp/"));
+    mu_assert("[cli] test_out_path: Trailing slash not appended to path",
+              !strcmp(p.out, "/tmp/"));
     free(p.out);
     return NULL;
 }
 
 
-char *test_game_id(void) {
+const char *test_game_id(void) {
     char *argv[]    = {"nekopack", "-g", "nekopara_volume_1", "a.xp3"};
     struct params p = parse_args(4, argv);
-    mu_assert("Incorrect game ID", p.game == NEKOPARA_VOLUME_1);
+    mu_assert("[cli] test_game_id: Incorrect game ID",
+              p.game == NEKOPARA_VOLUME_1);
     free(p.out);
     return NULL;
 }
 
 
-char *test_vararg_index(void) {
+const char *test_vararg_index(void) {
     char *argv[]    = {"nekopack", "-l", "a.xp3"};
     struct params p = parse_args(3, argv);
-    mu_assert("Invalid vararg index", !strcmp("a.xp3", argv[p.vararg_index]));
+    mu_assert("[cli] test_vararg_index: Invalid vararg index",
+              !strcmp("a.xp3", argv[p.vararg_index]));
     free(p.out);
     return NULL;
 }

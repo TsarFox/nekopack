@@ -51,7 +51,9 @@ $(OBJDIR)/%.o: $(TSTDIR)/%.c
 	@$(CC) $(CFLAGS) -c -o $@ -I $(SRCDIR) $(TSTDIR)/$*.c
 
 test: $(BINDIR)/test
+	@echo
 	@$(BINDIR)/test
+	@echo
 
 clean:
 	rm -f $(BINDIR)/* $(OBJDIR)/*

@@ -20,26 +20,27 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "minunit.h"
-
 #include "encoding.h"
 
+#include "minunit.h"
 
-char *test_decode_utf16le(void) {
+
+const char *test_decode_utf16le(void) {
     char *in = "\x41\x00\x42\x00\x43\x00\x00\x00", *out = malloc(8);
     memset(out, '\xff', 8);
     utf16le_decode(in, out, 8);
-    mu_assert("UTF16-LE decoding failure", !strcmp(out, "ABC"));
+    mu_assert("[encoding] test_decode_utf16le: UTF16-LE decoding failure",
+              !strcmp(out, "ABC"));
     free(out);
     return NULL;
 }
 
 
-char *test_encode_utf16le(void) {
+const char *test_encode_utf16le(void) {
     char *in = "ABC", *out = malloc(8);
     memset(out, '\xff', 8);
     utf16le_encode(in, out, 3);
-    mu_assert("UTF16-LE encoding failure",
+    mu_assert("[encoding] test_encode_utf16le: UTF16-LE encoding failure",
               !memcmp(out, "\x41\x00\x42\x00\x43\x00\x00\x00", 8));
     free(out);
     return NULL;

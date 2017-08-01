@@ -20,36 +20,37 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "minunit.h"
-
 #include "header.h"
 #include "io.h"
+
+#include "minunit.h"
 
 extern int tests_run;
 
 
-char *test_header_read(void) {
+const char *test_header_read(void) {
     struct stream *s = stream_new(sizeof(struct header));
     memset(s->_start, '\x00', sizeof(struct header));
 
     struct header *h = read_header(s);
-    mu_assert("Header assertions failed", h == NULL);
+    mu_assert("[header] test_header_read: Header assertions failed", h == NULL);
 
     stream_rewind(s);
     memcpy(s->_start, "\x58\x50\x33\x0d\x0a\x20\x0a\x1a\x8b\x67\x01\x17\x00"
            "\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x80\x00\x00\x00\x00\x00"
            "\x00\x00\x00\xd1\xfe\x56\x0b\x00\x00\x00\x00", 42);
     h = read_header(s);
-    mu_assert("Header parsing failure", h != NULL);
+    mu_assert("[header] test_header_read: Header parsing failure", h != NULL);
 
     stream_free(s);
     return NULL;
 }
 
 
-char *test_header_creation(void) {
+const char *test_header_creation(void) {
     struct header *h = create_header();
-    mu_assert("Header allocation failed", h != NULL);
-    mu_assert("Incorrect XP3 header", !memcmp(h->magic, XP3_MAGIC, 11));
+    mu_assert("[header] test_header_creation: Header allocation failed", h != NULL);
+    mu_assert("[header] test_header_creation: Incorrect XP3 header",
+              !memcmp(h->magic, XP3_MAGIC, 11));
     return NULL;
 }
